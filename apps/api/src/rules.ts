@@ -64,8 +64,9 @@ export function rulesAssessment(signals: Signal[], daysAhead: number): Omit<Asse
     recommendations.push({ action: "No action needed — check your flight status on the day as usual.", reason: "No significant disruption signals found.", priority: "day_of_travel" });
   }
 
-  const headline =
-    overallRisk === "low" ? "Low risk — no significant disruption signals" : `${overallRisk[0].toUpperCase()}${overallRisk.slice(1)} risk — ${risks.slice(0, 2).map((r) => r.title.toLowerCase()).join(" and ")}`;
+  // The UI shows the level as a badge, so the headline says what, not how bad.
+  const kinds = risks.slice(0, 2).map((r) => r.title.toLowerCase()).join(" and ");
+  const headline = overallRisk === "low" ? "No significant disruption signals" : `${kinds[0].toUpperCase()}${kinds.slice(1)}`;
 
   return {
     overallRisk,

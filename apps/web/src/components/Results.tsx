@@ -1,7 +1,7 @@
 "use client";
 
 import type { AssessResponse } from "@/lib/api";
-import { RISK_LEVELS, type RiskLevel } from "@/lib/riskLevels";
+import { RISK_LEVELS, headlineWithoutLevel, type RiskLevel } from "@/lib/riskLevels";
 
 type Signal = AssessResponse["signals"][number];
 type Recommendation = AssessResponse["assessment"]["recommendations"][number];
@@ -73,7 +73,7 @@ export function Results({ data }: { data: AssessResponse }) {
 
         <div className="verdict">
           <span className="risk-badge">{RISK_LABEL[a.overallRisk]}</span>
-          <h2 className="verdict-headline">{a.headline}</h2>
+          <h2 className="verdict-headline">{headlineWithoutLevel(a.headline)}</h2>
         </div>
         <RiskScale current={a.overallRisk} />
         <p className="verdict-summary">{a.summary}</p>

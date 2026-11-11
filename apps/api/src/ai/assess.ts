@@ -7,7 +7,9 @@ const AssessmentSchema = z.object({
   overallRisk: z.enum(["low", "moderate", "high", "severe"]),
   confidence: z.enum(["low", "medium", "high"]),
   confidenceReason: z.string().describe("One sentence: why this confidence level (forecast horizon, source agreement, missing data)."),
-  headline: z.string().describe("Plain-language verdict, max ~12 words, e.g. 'Low risk — clear weather at both ends'."),
+  headline: z
+    .string()
+    .describe("Plain-language verdict, max ~12 words. Don't repeat the risk level (it's shown separately), e.g. 'Clear weather at both ends' or 'Evening thunderstorms at EWR'."),
   summary: z.string().describe("2–3 sentences for a busy traveller."),
   risks: z.array(
     z.object({

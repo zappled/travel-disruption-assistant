@@ -532,12 +532,18 @@ select.input {
   color: var(--ink-soft);
   font-size: 0.92rem;
 }
+/* Badge and headline share one line; a long headline wraps beside the badge. */
 .verdict {
   margin-top: 18px;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
+  align-items: baseline;
+  gap: 12px;
+}
+.verdict .risk-badge {
+  flex-shrink: 0;
+}
+.verdict-headline {
+  min-width: 0;
 }
 .risk-badge {
   font-family: var(--font-signage);
@@ -556,7 +562,6 @@ select.input {
 /* Risk scale: four equal steps, the current one filled in its risk colour */
 .risk-scale-wrap {
   margin-top: 14px;
-  max-width: 420px;
 }
 .risk-scale {
   display: grid;

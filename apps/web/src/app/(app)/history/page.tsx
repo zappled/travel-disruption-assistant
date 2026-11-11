@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppShell";
 import { api, ApiError, type HistorySummary } from "@/lib/api";
+import { headlineWithoutLevel } from "@/lib/riskLevels";
 
 const RISK_LABEL = { low: "Low", moderate: "Moderate", high: "High", severe: "Severe" } as const;
 
@@ -55,7 +56,7 @@ export default function PastResultsPage() {
                   {e.originCodes.join(" ")} → {e.destinationCodes.join(" ")}
                 </span>
                 <span className="history-risk">{RISK_LABEL[e.overallRisk]} risk</span>
-                <span className="history-headline">{e.headline}</span>
+                <span className="history-headline">{headlineWithoutLevel(e.headline)}</span>
                 <span className="small muted">
                   Travel {formatTravelDate(e.request.date)}. Checked {formatChecked(e.createdAt)}.
                 </span>

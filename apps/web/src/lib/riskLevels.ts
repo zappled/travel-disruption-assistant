@@ -2,6 +2,17 @@ import type { AssessResponse } from "@/lib/api";
 
 export type RiskLevel = AssessResponse["assessment"]["overallRisk"];
 
+/**
+ * The risk level is always shown as its own badge, so drop a leading
+ * "Moderate risk —" / "Low risk:" from headlines (older results and AI output
+ * may include it).
+ */
+export function headlineWithoutLevel(headline: string): string {
+  const stripped = headline.replace(/^\s*(low|moderate|high|severe)\s+risk\s*[—–:,-]?\s*/i, "");
+  if (!stripped) return headline;
+  return stripped[0].toUpperCase() + stripped.slice(1);
+}
+
 /** Plain-language explanation of each overall risk level, shown with results. */
 export const RISK_LEVELS: { level: RiskLevel; label: string; meaning: string; todo: string }[] = [
   {
