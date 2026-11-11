@@ -18,6 +18,19 @@ function shortName(name: string) {
   return name.replace(/\s+Airport$/i, "").replace(/\bInternational\b/g, "Intl").replace(/\bRegional\b/g, "Rgnl");
 }
 
+/**
+ * Give a suggestion row a hover tooltip with the full, unabbreviated text, but
+ * only when its text is actually cut off. `title` isn't a React-managed prop
+ * here, so setting it directly doesn't fight React (or mark.js).
+ */
+function showFullNameIfTruncated(row: HTMLElement, s: AirportSuggestion) {
+  const text = row.querySelector<HTMLElement>(".combo-text");
+  const truncated = !!text && text.scrollWidth > text.clientWidth;
+  const full = s.kind === "metro" ? `${s.label} (${s.codes.join(", ")})` : `${s.value}: ${s.label}, ${s.detail}`;
+  if (truncated) row.title = full;
+  else row.removeAttribute("title");
+}
+
 interface Results {
   term: string; // the search term these suggestions were fetched for
   list: AirportSuggestion[];
@@ -171,7 +184,10 @@ export function AirportInput({
               // mousedown keeps focus in the input; click picks the option
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => choose(s)}
-              onMouseEnter={() => setActive(i)}
+              onMouseEnter={(e) => {
+                setActive(i);
+                showFullNameIfTruncated(e.currentTarget, s);
+              }}
             >
               <span className="combo-code">{s.kind === "metro" ? s.codes.join(" ") : s.value}</span>
               <span className="combo-text">
