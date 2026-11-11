@@ -6,6 +6,13 @@ import { api, type AirportSuggestion } from "@/lib/api";
 // Shared across inputs: identical queries are only fetched once per page load.
 const cache = new Map<string, AirportSuggestion[]>();
 
+const MAX_SHOWN = 6;
+
+/** "John F. Kennedy International Airport" → "John F. Kennedy Intl" */
+function shortName(name: string) {
+  return name.replace(/\s+Airport$/i, "").replace(/\bInternational\b/g, "Intl").replace(/\bRegional\b/g, "Rgnl");
+}
+
 /**
  * Text input with airport/city suggestions (ARIA combobox pattern).
  * Free text is still allowed: the API resolves whatever is typed.
@@ -39,7 +46,7 @@ export function AirportInput({
     const timer = setTimeout(async () => {
       try {
         const hit = cache.get(q.toLowerCase());
-        const list = hit ?? (await api.searchAirports(q)).suggestions;
+        const list = hit ?? (await api.searchAirports(q)).suggestions.slice(0, MAX_SHOWN);
         if (!hit) cache.set(q.toLowerCase(), list);
         if (cancelled) return;
         setSuggestions(list);
@@ -129,11 +136,11 @@ export function AirportInput({
               onClick={() => choose(s)}
               onMouseEnter={() => setActive(i)}
             >
-              <span className="combo-code">{s.kind === "metro" ? s.codes.join(" ") : s.value}</span>
               <span className="combo-text">
                 <span className="combo-label">{s.label}</span>
-                {s.kind === "airport" && <span className="combo-detail">{s.detail}</span>}
+                {s.kind === "airport" && <span className="combo-detail">{shortName(s.detail)}</span>}
               </span>
+              <span className="combo-code">{s.kind === "metro" ? s.codes.join(" ") : s.value}</span>
             </li>
           ))}
         </ul>
