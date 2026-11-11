@@ -1,12 +1,14 @@
 import type {
   AmbiguousResponse,
   AssessResponse,
+  HistoryEntry,
+  HistorySummary,
   ParsedTrip,
   SavedRoute,
   User,
 } from "@tda/api/types";
 
-export type { AmbiguousResponse, AssessResponse, ParsedTrip, SavedRoute, User };
+export type { AmbiguousResponse, AssessResponse, HistoryEntry, HistorySummary, ParsedTrip, SavedRoute, User };
 
 export class ApiError extends Error {
   constructor(
@@ -39,11 +41,17 @@ export const api = {
 
   listRoutes: () => call<{ routes: SavedRoute[]; max: number }>("/routes"),
   saveRoute: (r: Omit<SavedRoute, "id" | "createdAt">) => post<{ route: SavedRoute }>("/routes", r),
+  updateRoute: (id: string, r: Omit<SavedRoute, "id" | "createdAt">) =>
+    call<{ route: SavedRoute }>(`/routes/${id}`, { method: "PUT", body: JSON.stringify(r) }),
   deleteRoute: (id: string) => call<void>(`/routes/${id}`, { method: "DELETE" }),
+
+  listHistory: () => call<{ entries: HistorySummary[]; max: number }>("/history"),
+  getHistory: (id: string) => call<{ entry: HistoryEntry }>(`/history/${id}`),
+  deleteHistory: (id: string) => call<void>(`/history/${id}`, { method: "DELETE" }),
 
   parse: (text: string, today: string) => post<{ trip: ParsedTrip }>("/parse", { text, today }),
   assess: (req: { origin: string; destination: string; date: string; timeOfDay?: string | null; notes?: string | null }) =>
-    post<AssessResponse>("/assess", req),
+    post<AssessResponse & { historyId: string }>("/assess", req),
 };
 
 /** Local calendar date as YYYY-MM-DD (not UTC). */

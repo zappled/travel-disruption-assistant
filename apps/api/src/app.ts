@@ -6,6 +6,7 @@ import { parseTripText } from "./ai/parse.js";
 import { getClient } from "./ai/client.js";
 import { AssessError, assessRequestSchema, runAssessment } from "./assessment.js";
 import { authRouter, requireAuth } from "./auth.js";
+import { historyRouter, recordHistory } from "./history.js";
 import { savedRoutesRouter } from "./savedRoutes.js";
 import { MemoryStore, type Store } from "./store.js";
 
@@ -27,6 +28,7 @@ export function createApp(store: Store = new MemoryStore()) {
 
   app.use("/auth", authRouter(store));
   app.use("/routes", savedRoutesRouter(store));
+  app.use("/history", historyRouter(store));
 
   // Free text → structured trip fields (user confirms them before assessing).
   app.post("/parse", requireAuth(store), async (req, res) => {
@@ -54,7 +56,20 @@ export function createApp(store: Store = new MemoryStore()) {
       return;
     }
     try {
-      res.json(await runAssessment(store, parsed.data));
+      const result = await runAssessment(store, parsed.data);
+      const entry = recordHistory(
+        store,
+        req.user!.id,
+        {
+          origin: parsed.data.origin,
+          destination: parsed.data.destination,
+          date: parsed.data.date,
+          timeOfDay: parsed.data.timeOfDay ?? null,
+          notes: parsed.data.notes ?? null,
+        },
+        result,
+      );
+      res.json({ ...result, historyId: entry.id });
     } catch (err) {
       if (err instanceof AssessError) {
         res.status(err.status).json(err.body);

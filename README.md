@@ -20,6 +20,14 @@ Without `ANTHROPIC_API_KEY` the app still works: it falls back to a rules-only a
 | `npm run typecheck` / `npm run lint` / `npm run build` | Checks for both apps |
 | `npx tsx apps/api/scripts/probe.ts "New York" "San Francisco" 2026-11-12` | Show live source data and signals without the AI |
 
+## Pages
+
+A side menu (a top bar on narrow screens) switches between:
+
+- **Check your trip** (`/`): describe the trip or fill in the form, then get the assessment. Saved routes appear as one-click shortcuts.
+- **Saved routes** (`/routes`): add, edit, remove, and check your up to 5 regular routes.
+- **Past results** (`/history`): your last 20 checks, each viewable as a snapshot with "Check again with fresh data".
+
 ## Structure
 
 | Path | What |
@@ -55,7 +63,7 @@ free text ──(Claude: parse)──▶ form fields (user confirms)
 - **Current versus forecast.** FAA programs describe conditions *now*. They count fully only for today and tomorrow; otherwise they're shown as context.
 - **Never guess locations.** "Portland" asks OR or ME. "New York" checks JFK, LGA and EWR and compares them.
 - **Graceful degradation.** Each source can fail independently; the result shows which sources responded.
-- **Accounts are kept in memory.** Users, sessions (httpOnly cookie, 7 days) and saved routes (max 5) sit behind a `Store` interface backed by memory. **Restarting the API wipes them**; the demo user (`DEMO_EMAIL` / `DEMO_PASSWORD`) is re-created from `.env` at startup. Accounts are provisioned, not self-registered.
+- **Accounts are kept in memory.** Users, sessions (httpOnly cookie, 7 days), saved routes (max 5) and past results (last 20) sit behind a `Store` interface backed by memory. **Restarting the API wipes them**; the demo user (`DEMO_EMAIL` / `DEMO_PASSWORD`) is re-created from `.env` at startup. Accounts are provisioned, not self-registered.
 
 ## API
 
@@ -64,6 +72,7 @@ free text ──(Claude: parse)──▶ form fields (user confirms)
 | GET | `/health` | Includes whether AI is configured |
 | POST | `/auth/login`, `/auth/logout` · GET `/auth/me` | Email + password (scrypt), session cookie, login rate limiting. No sign-up endpoint |
 | GET/POST | `/routes` · PUT/DELETE `/routes/:id` | Saved routes, max 5 per user |
+| GET | `/history` · GET/DELETE `/history/:id` | Past results: the last 20 assessments per user, stored as full snapshots with the original request |
 | POST | `/parse` | `{ text }` → `{ origin, destination, date, timeOfDay, notes }` |
 | POST | `/assess` | `{ origin, destination, date, timeOfDay?, notes? }` → assessment, signals, sources, notices. 409 with `choices` for ambiguous cities |
 

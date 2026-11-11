@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { takeDraft, useApp } from "@/components/AppShell";
 import { Results } from "@/components/Results";
-import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute, type User } from "@/lib/api";
+import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute } from "@/lib/api";
 
 const MAX_DAYS = 14;
-const DRAFT_KEY = "tripcheck:draft";
 
 interface Trip {
   prompt: string;
@@ -20,67 +19,31 @@ interface Trip {
 
 const STEPS = ["Finding your airports", "Checking FAA airspace status", "Reading weather forecasts and alerts", "Weighing the evidence"];
 
-function emptyTrip(): Trip {
-  // Date is filled in client-side after login (current time can't be read during prerender).
-  return { prompt: "", origin: "", destination: "", date: "", timeOfDay: "", notes: "" };
+/** Runs client-side only: AppShell renders pages after login. */
+function initialTrip(): Trip {
+  const base: Trip = { prompt: "", origin: "", destination: "", date: localDate(1), timeOfDay: "", notes: "" };
+  const draft = takeDraft();
+  if (!draft) return base;
+  // A past date (e.g. re-running an old result) falls back to tomorrow.
+  const date = draft.date && draft.date >= localDate() ? draft.date : base.date;
+  return { ...base, ...draft, date };
 }
 
-export default function Home() {
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [routes, setRoutes] = useState<SavedRoute[]>([]);
-  const [maxRoutes, setMaxRoutes] = useState(5);
-  const [trip, setTrip] = useState<Trip>(emptyTrip);
+export default function CheckPage() {
+  const { routes, setRoutes, maxRoutes, handleAuthError } = useApp();
+  const [trip, setTrip] = useState<Trip>(initialTrip);
 
   const [parsing, setParsing] = useState(false);
   const [parseNote, setParseNote] = useState<string | null>(null);
   const [assessing, setAssessing] = useState(false);
   const [step, setStep] = useState(0);
-  const [result, setResult] = useState<AssessResponse | null>(null);
+  const [result, setResult] = useState<(AssessResponse & { historyId: string }) | null>(null);
   const [ambiguous, setAmbiguous] = useState<AmbiguousResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveLabel, setSaveLabel] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const set = (patch: Partial<Trip>) => setTrip((t) => ({ ...t, ...patch }));
-
-  /** Session expired mid-use: keep what they typed, send them to log in. */
-  const handleAuthError = useCallback(
-    (err: unknown) => {
-      if (err instanceof ApiError && err.status === 401) {
-        try {
-          sessionStorage.setItem(DRAFT_KEY, JSON.stringify(trip));
-        } catch {}
-        router.replace("/login");
-        return true;
-      }
-      return false;
-    },
-    [router, trip],
-  );
-
-  useEffect(() => {
-    api
-      .me()
-      .then(({ user }) => {
-        setUser(user);
-        let draft: Partial<Trip> = {};
-        try {
-          const saved = sessionStorage.getItem(DRAFT_KEY);
-          if (saved) {
-            draft = JSON.parse(saved);
-            sessionStorage.removeItem(DRAFT_KEY);
-          }
-        } catch {}
-        setTrip((t) => ({ ...t, ...draft, date: draft.date || t.date || localDate(1) }));
-        return api.listRoutes();
-      })
-      .then(({ routes, max }) => {
-        setRoutes(routes);
-        setMaxRoutes(max);
-      })
-      .catch(() => router.replace("/login"));
-  }, [router]);
 
   useEffect(() => {
     if (!assessing) return;
@@ -104,7 +67,7 @@ export default function Home() {
       const missing = [!p.origin && "where you're flying from", !p.destination && "where you're going", !p.date && "the date"].filter(Boolean);
       setParseNote(missing.length ? `Filled in what I could. Please add ${missing.join(" and ")}.` : "Check the details below, then run the check.");
     } catch (err) {
-      if (!handleAuthError(err)) setParseNote(err instanceof ApiError ? err.message : "Couldn't interpret that. Fill in the fields below instead.");
+      if (!handleAuthError(err, trip)) setParseNote(err instanceof ApiError ? err.message : "Couldn't interpret that. Fill in the fields below instead.");
     } finally {
       setParsing(false);
     }
@@ -130,7 +93,7 @@ export default function Home() {
         }),
       );
     } catch (err) {
-      if (handleAuthError(err)) return;
+      if (handleAuthError(err, t)) return;
       if (err instanceof ApiError && err.body.error === "ambiguous_location") {
         setAmbiguous(err.body as unknown as AmbiguousResponse);
       } else {
@@ -149,7 +112,7 @@ export default function Home() {
   }
 
   function applyRoute(r: SavedRoute) {
-    setTrip({ ...emptyTrip(), date: trip.date, prompt: r.prompt ?? "", origin: r.origin, destination: r.destination });
+    setTrip((t) => ({ ...t, prompt: r.prompt ?? "", origin: r.origin, destination: r.destination, timeOfDay: "", notes: "" }));
     setResult(null);
     setAmbiguous(null);
     setError(null);
@@ -161,32 +124,16 @@ export default function Home() {
     try {
       const { route } = await api.saveRoute({
         label: saveLabel.trim(),
-        origin: trip.origin,
-        destination: trip.destination,
+        origin: trip.origin.trim(),
+        destination: trip.destination.trim(),
         prompt: trip.prompt.trim() || null,
       });
       setRoutes((rs) => [...rs, route]);
       setSaveLabel(null);
     } catch (err) {
-      if (!handleAuthError(err)) setSaveError(err instanceof ApiError ? err.message : "Couldn't save this route.");
+      if (!handleAuthError(err, trip)) setSaveError(err instanceof ApiError ? err.message : "Couldn't save this route.");
     }
   }
-
-  async function removeRoute(id: string) {
-    try {
-      await api.deleteRoute(id);
-      setRoutes((rs) => rs.filter((r) => r.id !== id));
-    } catch (err) {
-      handleAuthError(err);
-    }
-  }
-
-  async function logout() {
-    await api.logout().catch(() => {});
-    router.replace("/login");
-  }
-
-  if (!user) return null;
 
   const canAssess = trip.origin.trim() && trip.destination.trim() && trip.date && !assessing;
   const routeFull = routes.length >= maxRoutes;
@@ -195,21 +142,11 @@ export default function Home() {
   );
 
   return (
-    <div className="shell">
-      <header className="topbar">
-        <Link className="wordmark" href="/">
-          Trip Check
-        </Link>
-        <div className="topbar-user">
-          <span>{user.email}</span>
-          <button className="btn-link" onClick={logout}>
-            Log out
-          </button>
-        </div>
-      </header>
+    <>
+      <h1 className="page-title">Check your trip</h1>
 
       {routes.length > 0 && (
-        <nav className="saved" aria-label="Saved routes">
+        <div className="saved" aria-label="Use a saved route">
           {routes.map((r) => (
             <span className="saved-chip" key={r.id}>
               <button onClick={() => applyRoute(r)} title={r.prompt ?? undefined}>
@@ -218,15 +155,9 @@ export default function Home() {
                   {r.origin} → {r.destination}
                 </span>
               </button>
-              <button className="saved-remove" onClick={() => removeRoute(r.id)} aria-label={`Remove saved route ${r.label}`}>
-                ×
-              </button>
             </span>
           ))}
-          <span className="small muted">
-            {routes.length} of {maxRoutes} saved
-          </span>
-        </nav>
+        </div>
       )}
 
       <form
@@ -292,28 +223,26 @@ export default function Home() {
             {assessing ? "Checking…" : "Check this trip"}
           </button>
           {saveLabel === null ? (
-            <button
-              type="button"
-              className="btn-link"
-              disabled={!trip.origin.trim() || !trip.destination.trim() || routeFull || alreadySaved}
-              onClick={() => {
-                setSaveError(null);
-                setSaveLabel(`${trip.origin.trim()} to ${trip.destination.trim()}`.slice(0, 60));
-              }}
-            >
-              {alreadySaved ? "Route saved" : routeFull ? `${maxRoutes} routes saved. Remove one to save this.` : "Save route"}
-            </button>
+            routeFull && !alreadySaved ? (
+              <span className="small muted">
+                {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to make room.
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="btn-link"
+                disabled={!trip.origin.trim() || !trip.destination.trim() || alreadySaved}
+                onClick={() => {
+                  setSaveError(null);
+                  setSaveLabel(`${trip.origin.trim()} to ${trip.destination.trim()}`.slice(0, 60));
+                }}
+              >
+                {alreadySaved ? "Route saved" : "Save route"}
+              </button>
+            )
           ) : (
-            <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input
-                className="input"
-                style={{ width: 220 }}
-                aria-label="Route name"
-                value={saveLabel}
-                maxLength={60}
-                onChange={(e) => setSaveLabel(e.target.value)}
-                autoFocus
-              />
+            <span className="inline-save">
+              <input className="input" aria-label="Route name" value={saveLabel} maxLength={60} onChange={(e) => setSaveLabel(e.target.value)} autoFocus />
               <button type="button" className="btn btn-secondary" onClick={saveRoute}>
                 Save
               </button>
@@ -327,7 +256,7 @@ export default function Home() {
       </form>
 
       {error && (
-        <p className="notice" role="alert" style={{ borderColor: "var(--risk-severe)" }}>
+        <p className="notice notice-error" role="alert">
           {error}
         </p>
       )}
@@ -362,7 +291,14 @@ export default function Home() {
         </div>
       )}
 
-      {result && <Results data={result} />}
+      {result && (
+        <>
+          <Results data={result} />
+          <p className="small muted">
+            Saved to <Link href={`/history/${result.historyId}`}>Past results</Link>.
+          </p>
+        </>
+      )}
 
       {!result && !assessing && !ambiguous && !error && (
         <p className="muted small" style={{ marginTop: 24 }}>
@@ -370,6 +306,6 @@ export default function Home() {
           weather data, then summarises what could disrupt your trip and what to do about it.
         </p>
       )}
-    </div>
+    </>
   );
 }

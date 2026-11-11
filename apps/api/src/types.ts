@@ -138,3 +138,27 @@ export interface SavedRoute {
 }
 
 export const MAX_SAVED_ROUTES = 5;
+
+export interface HistoryEntry {
+  id: string;
+  createdAt: string;
+  /** What the user asked for, so the check can be re-run on fresh data. */
+  request: {
+    origin: string;
+    destination: string;
+    date: string;
+    timeOfDay: string | null;
+    notes: string | null;
+  };
+  result: AssessResponse;
+}
+
+export type HistorySummary = Omit<HistoryEntry, "result"> & {
+  overallRisk: RiskLevel;
+  confidence: Confidence;
+  headline: string;
+  originCodes: string[];
+  destinationCodes: string[];
+};
+
+export const MAX_HISTORY = 20;

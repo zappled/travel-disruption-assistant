@@ -72,19 +72,16 @@ a {
   }
 }
 
-.shell {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 0 16px 64px;
+/* ------------------------------------------------------------------ app shell */
+.app {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100vh;
 }
-
-/* ------------------------------------------------------------------ header */
-.topbar {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 0 28px;
+.app-main {
+  max-width: 760px;
+  width: 100%;
+  padding: 28px 32px 64px;
 }
 .wordmark {
   font-family: var(--font-signage);
@@ -94,18 +91,144 @@ a {
   color: var(--ink);
   text-decoration: none;
 }
-.topbar-user {
-  font-size: 0.88rem;
-  color: var(--ink-soft);
+
+/* Side menu: reads like a departures board column — ink panel, signage type. */
+.sidenav {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.sidenav .wordmark {
+  color: var(--paper);
+  padding: 0 10px;
+}
+.sidenav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidenav nav a {
+  display: flex;
+  justify-content: space-between;
   align-items: baseline;
+  gap: 8px;
+  padding: 9px 10px 9px 12px;
+  border-left: 4px solid transparent;
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
+  text-decoration: none;
+  font-weight: 700;
+}
+.sidenav nav a:hover {
+  color: var(--paper);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
+}
+.sidenav nav a.active {
+  color: var(--paper);
+  border-left-color: var(--risk-moderate);
+  background: color-mix(in srgb, var(--paper) 12%, transparent);
+}
+.nav-count {
+  font-family: var(--font-signage);
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.75;
+}
+.sidenav-user {
+  margin-top: auto;
+  padding: 0 10px;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--paper) 70%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
 }
-.topbar-user span {
+.sidenav-user span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.sidenav-user .btn-link {
+  color: var(--paper);
+  align-self: flex-start;
+}
+@media (prefers-color-scheme: dark) {
+  .sidenav {
+    background: #0a111c;
+    color: var(--ink);
+    border-right: 1px solid var(--rule);
+  }
+  .sidenav .wordmark,
+  .sidenav nav a.active,
+  .sidenav nav a:hover,
+  .sidenav-user .btn-link {
+    color: var(--ink);
+  }
+  .sidenav nav a,
+  .sidenav-user {
+    color: var(--ink-soft);
+  }
+}
+
+/* Narrow screens: the side menu becomes a top bar with scrollable tabs. */
+@media (max-width: 760px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .sidenav {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 16px;
+  }
+  .sidenav nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .sidenav ul {
+    flex-direction: row;
+  }
+  .sidenav nav a {
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    padding: 6px 10px;
+  }
+  .sidenav nav a.active {
+    border-bottom-color: var(--risk-moderate);
+  }
+  .sidenav-user {
+    margin: 0 0 0 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+    max-width: 60%;
+  }
+  .app-main {
+    padding: 20px 16px 48px;
+  }
+}
+
+.page-title {
+  font-family: var(--font-signage);
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 16px;
 }
 
 /* ------------------------------------------------------------------ type */
@@ -553,6 +676,144 @@ h3 {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
+}
+
+.notice-error {
+  border-left-color: var(--risk-severe);
+}
+.btn-danger {
+  color: var(--risk-severe);
+}
+.inline-save {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.inline-save .input {
+  width: 220px;
+}
+.empty {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-m);
+}
+
+/* ------------------------------------------------------------------ lists (saved routes, past results) */
+.list {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list-item {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  padding: 16px 18px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.list-item:has(.route-form) {
+  display: block;
+}
+.list-main {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.list-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.list-codes {
+  font-family: var(--font-signage);
+  font-weight: 600;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+.list-note {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+.list-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.history-item {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+.history-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--risk-color);
+}
+.history-item[data-risk="low"] {
+  --risk-color: var(--risk-low);
+}
+.history-item[data-risk="moderate"] {
+  --risk-color: var(--risk-moderate);
+}
+.history-item[data-risk="high"] {
+  --risk-color: var(--risk-high);
+}
+.history-item[data-risk="severe"] {
+  --risk-color: var(--risk-severe);
+}
+.history-link {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding: 14px 18px 14px 24px;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.history-link:hover {
+  background: color-mix(in srgb, var(--chart) 5%, transparent);
+}
+.history-risk {
+  font-family: var(--font-signage);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--risk-color);
+  text-align: right;
+}
+.history-headline,
+.history-link .small {
+  grid-column: 1 / -1;
+}
+
+.snapshot-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--chart);
+  border-radius: var(--radius-s);
+  padding: 12px 14px;
+  font-size: 0.92rem;
+}
+.snapshot-actions {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
 }
 
 /* ------------------------------------------------------------------ auth */
