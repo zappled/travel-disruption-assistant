@@ -116,10 +116,16 @@ export default function SavedRoutesPage() {
 
   return (
     <>
-      <h1 className="page-title">Saved routes</h1>
-      <p className="muted">
-        Routes you fly often, ready to check in one click. You can save up to {maxRoutes}; you have {routes.length}.
-      </p>
+      <div className="page-head">
+        <h1 className="page-title">Saved routes</h1>
+        <span className="route-count" aria-live="polite">
+          <strong>
+            {routes.length}/{maxRoutes}
+          </strong>{" "}
+          routes saved
+        </span>
+      </div>
+      <p className="muted">Routes you fly often, ready to check in one click.</p>
       {error && <p className="error-text">{error}</p>}
 
       {routes.length === 0 && !adding && (

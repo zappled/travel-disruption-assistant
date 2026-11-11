@@ -234,6 +234,23 @@ a {
   font-size: 2rem;
   margin-bottom: 16px;
 }
+/* Title row with something on the right (e.g. the saved-routes counter) */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.route-count {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.route-count strong {
+  font-family: var(--font-signage);
+  font-size: 1.3rem;
+  color: var(--ink);
+}
 /* Intro line under a page title */
 .page-intro {
   margin: -8px 0 20px;
