@@ -32,9 +32,29 @@ function initialTrip(): Trip {
   return { ...base, ...draft, date };
 }
 
+const AI_PANEL_KEY = "tripcheck:ai-panel-open";
+
+/** Last open/closed choice for the AI panel in this browser (default open). */
+function readAiPanelPref(): boolean {
+  try {
+    return localStorage.getItem(AI_PANEL_KEY) !== "false";
+  } catch {
+    return true;
+  }
+}
+
 export default function CheckPage() {
   const { routes, setRoutes, maxRoutes, handleAuthError } = useApp();
   const [trip, setTrip] = useState<Trip>(initialTrip);
+  // Open if the incoming draft has a description to show; otherwise the user's last choice.
+  const [aiOpen, setAiOpen] = useState(() => Boolean(trip.prompt) || readAiPanelPref());
+
+  function toggleAiPanel(open: boolean) {
+    setAiOpen(open);
+    try {
+      localStorage.setItem(AI_PANEL_KEY, String(open));
+    } catch {}
+  }
 
   const [parsing, setParsing] = useState(false);
   const [parseNote, setParseNote] = useState<string | null>(null);
@@ -115,6 +135,7 @@ export default function CheckPage() {
 
   function applyRoute(r: SavedRoute) {
     setTrip((t) => ({ ...t, prompt: r.prompt ?? "", origin: r.origin, destination: r.destination, timeOfDay: "", notes: "" }));
+    if (r.prompt) setAiOpen(true); // show the route's description (doesn't change the saved preference)
     setResult(null);
     setAmbiguous(null);
     setError(null);
@@ -169,13 +190,12 @@ export default function CheckPage() {
           if (canAssess) assess();
         }}
       >
-        <div className="planner-describe">
-          <label className="field" htmlFor="prompt">
-            Describe your trip
-          </label>
+        <details className="planner-describe" open={aiOpen} onToggle={(e) => toggleAiPanel(e.currentTarget.open)}>
+          <summary>Fill trip details with AI (optional)</summary>
           <div className="planner-describe-row">
             <textarea
               id="prompt"
+              aria-label="Describe your trip"
               className="textarea"
               placeholder="e.g. Flying NYC to San Francisco tomorrow evening, connecting through Denver"
               value={trip.prompt}
@@ -187,7 +207,7 @@ export default function CheckPage() {
             </button>
           </div>
           {parseNote && <span className="small muted">{parseNote}</span>}
-        </div>
+        </details>
 
         <div className="planner-grid">
           <AirportInput label="From" value={trip.origin} onChange={(origin) => set({ origin })} />

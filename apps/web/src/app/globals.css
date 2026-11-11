@@ -397,18 +397,55 @@ select.input {
   border-radius: var(--radius-m);
   padding: 20px;
 }
+/* "Fill trip details with AI" accordion */
 .planner-describe {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 18px;
+  padding-bottom: 16px;
   margin-bottom: 18px;
   border-bottom: 1px dashed var(--rule);
+}
+.planner-describe:not([open]) {
+  padding-bottom: 14px;
+}
+.planner-describe > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  list-style: none;
+  width: 100%;
+}
+.planner-describe > summary::-webkit-details-marker {
+  display: none;
+}
+/* Chevron on the right: points down when closed, up when open */
+.planner-describe > summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-right: 2px solid var(--ink-soft);
+  border-bottom: 2px solid var(--ink-soft);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 150ms ease;
+}
+.planner-describe[open] > summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+.planner-describe > summary:hover::after {
+  border-color: var(--ink);
 }
 .planner-describe-row {
   display: flex;
   gap: 8px;
   align-items: flex-start;
+  margin-top: 10px;
+}
+.planner-describe > .small {
+  display: block;
+  margin-top: 8px;
 }
 .planner-grid {
   display: grid;
