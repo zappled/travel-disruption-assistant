@@ -243,6 +243,7 @@ export function Results({
           : "Summary produced by rules (AI unavailable)."}{" "}
         Checked {formatTime(data.generatedAt)}.
       </p>
+      <p className="small disclaimer">All AI-generated information should be independently verified.</p>
     </section>
   );
 }
