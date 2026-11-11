@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AirportInput } from "@/components/AirportInput";
 import { takeDraft, useApp } from "@/components/AppShell";
+import { InfoTip } from "@/components/InfoTip";
 import { Results } from "@/components/Results";
 import { TIME_WINDOWS } from "@tda/api/types";
 import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute } from "@/lib/api";
@@ -196,9 +197,18 @@ export default function CheckPage() {
             Date
             <input className="input" type="date" value={trip.date} min={localDate()} max={localDate(MAX_DAYS)} onChange={(e) => set({ date: e.target.value })} required />
           </label>
-          <label className="field">
-            Time of day
-            <select className="input" value={trip.timeOfDay} onChange={(e) => set({ timeOfDay: e.target.value })}>
+          <div className="field">
+            <span className="field-label-row">
+              <label htmlFor="time-of-day">Time of day</label>
+              <InfoTip id="time-of-day-hint" text="Departure, in local time" />
+            </span>
+            <select
+              id="time-of-day"
+              className="input"
+              aria-describedby="time-of-day-hint"
+              value={trip.timeOfDay}
+              onChange={(e) => set({ timeOfDay: e.target.value })}
+            >
               <option value="">Any time</option>
               {(Object.keys(TIME_WINDOWS) as (keyof typeof TIME_WINDOWS)[]).map((k) => (
                 <option key={k} value={k}>
@@ -206,8 +216,7 @@ export default function CheckPage() {
                 </option>
               ))}
             </select>
-            <span className="muted small field-hint">Departure, in local time</span>
-          </label>
+          </div>
           {trip.notes && (
             <label className="field span-2">
               Notes

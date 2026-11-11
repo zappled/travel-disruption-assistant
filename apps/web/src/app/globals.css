@@ -44,6 +44,10 @@
 }
 
 /* ------------------------------------------------------------------ base */
+:root {
+  /* Native controls (date picker icon, scrollbars) follow the theme: light icons in dark mode. */
+  color-scheme: light dark;
+}
 html {
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: 17px;
@@ -312,8 +316,74 @@ h3 {
   text-underline-offset: 2px;
 }
 
-.field-hint {
+.field-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Info icon + tooltip (hover or keyboard focus) */
+.info-tip {
+  position: relative;
+  display: inline-flex;
+}
+.info-tip-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-soft);
+  background: none;
+  color: var(--ink-soft);
+  font: 700 11px/1 var(--font-body), serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: help;
+}
+.info-tip-icon:hover,
+.info-tip-icon:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.info-tip-text {
+  position: absolute;
+  z-index: 30;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: var(--radius-s);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.82rem;
   font-weight: 400;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+}
+.info-tip:hover .info-tip-text,
+.info-tip-icon:focus-visible + .info-tip-text {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Custom select chevron, positioned 8px further in than the native arrow */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2314243b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 20px center;
+  background-size: 12px 8px;
+}
+@media (prefers-color-scheme: dark) {
+  select.input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23e6edf5' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
 }
 .error-text {
   color: var(--risk-severe);
