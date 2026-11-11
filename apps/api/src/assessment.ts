@@ -129,8 +129,8 @@ export async function runAssessment(store: Store, req: AssessRequest): Promise<A
       assessment.confidenceReason = `Capped at ${cap}: ${reasons.join("; ")}.`;
     }
   } catch (err) {
+    // The result still says it's rules-only (confidence reason + footer), so no separate notice.
     console.warn("[assess] AI unavailable, using rules:", err instanceof Error ? err.message : err);
-    notices.push("The AI summary is unavailable right now, so this assessment was produced by simple rules.");
     // Rules can't weigh conflicting sources the way the AI does, so never claim high confidence.
     const rulesCap: Confidence = CONF_RANK[cap] > CONF_RANK.medium ? "medium" : cap;
     assessment = {
