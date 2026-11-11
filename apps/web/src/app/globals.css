@@ -837,19 +837,11 @@ h3 {
   overflow-y: auto;
   font-weight: 400;
 }
-/* One line per suggestion: code left, then place and muted airport name.
-   Rows share the list's grid columns (subgrid), so every city name starts at
-   the same x position however wide the codes are. */
-.combo-list {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  column-gap: 14px;
-}
+/* One line per suggestion: code, a fixed 14px gap, then place and muted airport name. */
 .combo-list li {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: subgrid;
+  display: flex;
   align-items: baseline;
+  gap: 14px;
   padding: 8px 10px;
   border-radius: 3px;
   cursor: pointer;
