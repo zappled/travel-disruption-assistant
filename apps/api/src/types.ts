@@ -116,6 +116,8 @@ export interface Assessment {
   risks: Risk[];
   recommendations: Recommendation[];
   generatedBy: "ai" | "rules";
+  /** Which AI wrote it, e.g. "Claude (claude-opus-5-5)" or "Gemini (gemini-3.8-flash)" */
+  aiModel?: string;
 }
 
 export interface AssessResponse {

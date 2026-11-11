@@ -63,7 +63,7 @@ export function confidenceCap(daysAhead: number, sources: SourceStatus[]): { cap
 }
 
 /** Drop any AI-stated risk that doesn't cite a real signal. */
-export function enforceEvidence(assessment: Omit<Assessment, "generatedBy">, signals: Signal[]) {
+export function enforceEvidence(assessment: Omit<Assessment, "generatedBy" | "aiModel">, signals: Signal[]) {
   const ids = new Set(signals.map((s) => s.id));
   const risks = assessment.risks
     .map((r) => ({ ...r, evidenceIds: r.evidenceIds.filter((id) => ids.has(id)) }))
@@ -120,10 +120,10 @@ export async function runAssessment(store: Store, req: AssessRequest): Promise<A
   let assessment: Assessment;
   try {
     const ai = await assessWithAi({ origin, destination, date: req.date, daysAhead, travelWindow, notes: req.notes, signals, sources });
-    const checked = enforceEvidence(ai, signals);
+    const checked = enforceEvidence(ai.assessment, signals);
     if (checked.droppedRisks > 0) notices.push(`${checked.droppedRisks} AI-suggested risk(s) were removed because they weren't backed by evidence.`);
     const { droppedRisks: _unused, ...rest } = checked;
-    assessment = { ...rest, generatedBy: "ai" };
+    assessment = { ...rest, generatedBy: "ai", aiModel: ai.model };
     if (CONF_RANK[assessment.confidence] > CONF_RANK[cap]) {
       assessment.confidence = cap;
       assessment.confidenceReason = `Capped at ${cap}: ${reasons.join("; ")}.`;

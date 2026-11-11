@@ -11,7 +11,13 @@ ant auth login                           # Claude credentials via the Anthropic 
 npm run dev                              # API on :4000, web on :3000
 ```
 
-The API looks for Claude credentials in this order: `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, then an `ant auth login` profile (`~/.config/anthropic`). It logs which one it uses at startup, and `GET /health` reports it as `aiAuth`.
+The API picks an AI provider in this order:
+
+1. **Claude**: `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, then an `ant auth login` profile (`~/.config/anthropic`).
+2. **Gemini** (free-tier fallback): `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey), used only when no Claude credentials exist.
+3. **None**: rules-only assessments.
+
+Both providers return the same schema-validated output, so evidence checks and confidence caps apply equally. The API logs the provider at startup; `GET /health` reports it (`aiAuth`, `aiModel`), and each AI-written result says which model wrote it.
 
 Open http://localhost:3000 and log in with the demo account from `apps/api/.env`. There is no sign-up flow: in a real deployment, users would sign in with their existing work account.
 Without `ANTHROPIC_API_KEY` the app still works: it falls back to a rules-only assessment.

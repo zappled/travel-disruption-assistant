@@ -1,9 +1,8 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { Airport, Assessment, Signal, SourceStatus, TravelWindow } from "../types.js";
-import { MODEL, RefusalError, getClient } from "./client.js";
+import { getProvider } from "./client.js";
 
-const AssessmentSchema = z.object({
+export const AssessmentSchema = z.object({
   overallRisk: z.enum(["low", "moderate", "high", "severe"]),
   confidence: z.enum(["low", "medium", "high"]),
   confidenceReason: z.string().describe("One sentence: why this confidence level (forecast horizon, source agreement, missing data)."),
@@ -90,20 +89,16 @@ function buildPrompt(ctx: AssessContext): string {
     .join("\n");
 }
 
-export async function assessWithAi(ctx: AssessContext): Promise<Omit<Assessment, "generatedBy">> {
-  const client = await getClient();
-  if (!client) throw new Error("AI is not configured (set ANTHROPIC_API_KEY or run `ant auth login`)");
-
-  const response = await client.beta.messages.parse({
-    model: MODEL,
-    max_tokens: 16000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "medium", format: zodOutputFormat(AssessmentSchema) },
+export async function assessWithAi(
+  ctx: AssessContext,
+): Promise<{ assessment: Omit<Assessment, "generatedBy" | "aiModel">; model: string }> {
+  const provider = await getProvider();
+  const assessment = await provider.generate({
     system: SYSTEM,
-    messages: [{ role: "user", content: buildPrompt(ctx) }],
+    user: buildPrompt(ctx),
+    schema: AssessmentSchema,
+    effort: "medium",
+    maxTokens: 16000,
   });
-  if (response.stop_reason === "refusal") throw new RefusalError("Model declined to assess this trip");
-  if (!response.parsed_output) throw new Error(`No structured output (stop_reason: ${response.stop_reason})`);
-  return response.parsed_output;
+  return { assessment, model: provider.label };
 }

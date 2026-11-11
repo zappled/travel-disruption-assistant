@@ -3,7 +3,7 @@ import cors from "cors";
 import express from "express";
 import { z } from "zod";
 import { parseTripText } from "./ai/parse.js";
-import { getClientState } from "./ai/client.js";
+import { getProviderState } from "./ai/client.js";
 import { searchAirports } from "./airports.js";
 import { AssessError, assessRequestSchema, runAssessment } from "./assessment.js";
 import { authRouter, requireAuth } from "./auth.js";
@@ -24,8 +24,14 @@ export function createApp(store: Store = new MemoryStore()) {
   app.use(cookieParser());
 
   app.get("/health", async (_req, res) => {
-    const { auth } = await getClientState();
-    res.json({ status: "ok", ai: auth === "none" ? "not_configured" : "configured", aiAuth: auth, time: new Date().toISOString() });
+    const { auth, provider } = await getProviderState();
+    res.json({
+      status: "ok",
+      ai: provider ? "configured" : "not_configured",
+      aiAuth: auth,
+      aiModel: provider?.label ?? null,
+      time: new Date().toISOString(),
+    });
   });
 
   app.use("/auth", authRouter(store));

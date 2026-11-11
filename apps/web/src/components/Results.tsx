@@ -223,7 +223,9 @@ export function Results({ data }: { data: AssessResponse }) {
         </ul>
       </details>
       <p className="small muted" style={{ marginTop: 16 }}>
-        {a.generatedBy === "ai" ? "Summary written by AI from the signals above." : "Summary produced by rules (AI unavailable)."}{" "}
+        {a.generatedBy === "ai"
+          ? `Summary written by AI${a.aiModel ? ` (${a.aiModel})` : ""} from the signals above.`
+          : "Summary produced by rules (AI unavailable)."}{" "}
         Checked {formatTime(data.generatedAt)}.
       </p>
     </section>
