@@ -443,6 +443,11 @@ select.input {
   align-items: flex-start;
   margin-top: 10px;
 }
+/* Keep "Fill form" on one line; the text box takes the remaining width */
+.planner-describe-row .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
 .planner-describe > .small {
   display: block;
   margin-top: 8px;
