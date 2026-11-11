@@ -1204,6 +1204,7 @@ select.input {
   font-family: var(--font-signage);
   font-size: 2.4rem;
   font-weight: 700;
+  text-align: center;
 }
 .auth form {
   display: flex;

@@ -28,7 +28,6 @@ export function LoginForm() {
   return (
     <main className="auth">
       <h1>Trip Check</h1>
-      <p className="muted">Log in with your work email to check a route for weather and air-traffic disruptions.</p>
       <form onSubmit={onSubmit} noValidate>
         <label className="field">
           Work email
