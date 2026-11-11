@@ -101,22 +101,8 @@ export function requireAuth(store: Store) {
 export function authRouter(store: Store) {
   const router = Router();
 
-  router.post("/signup", async (req, res) => {
-    const parsed = credentialsSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: "invalid_input", message: parsed.error.issues[0].message });
-      return;
-    }
-    const { email, password } = parsed.data;
-    if (store.get(userKey(email))) {
-      res.status(409).json({ error: "email_taken", message: "An account with this email already exists." });
-      return;
-    }
-    const user = await createUser(store, email, password);
-    startSession(store, res, user);
-    res.status(201).json({ user });
-  });
-
+  // No self-service signup: accounts are provisioned (for the prototype, the
+  // demo user from .env). Real deployment would use the company's SSO.
   router.post("/login", async (req, res) => {
     const parsed = credentialsSchema.safeParse(req.body);
     const invalid = { error: "invalid_credentials", message: "Invalid email or password." };
@@ -154,13 +140,18 @@ export function authRouter(store: Store) {
   return router;
 }
 
-/** Seed a demo account from env so demos survive API restarts. */
+/** Create the demo account from env on startup (the store is in-memory). */
 export async function seedDemoUser(store: Store) {
-  const email = process.env.DEMO_EMAIL?.trim().toLowerCase();
-  const password = process.env.DEMO_PASSWORD;
-  if (!email || !password) return;
+  const parsed = credentialsSchema.safeParse({ email: process.env.DEMO_EMAIL ?? "", password: process.env.DEMO_PASSWORD ?? "" });
+  if (!parsed.success) {
+    console.warn(
+      `[api] no valid demo user — set DEMO_EMAIL and DEMO_PASSWORD (min 8 chars) in apps/api/.env to be able to log in (${parsed.error.issues[0].message})`,
+    );
+    return;
+  }
+  const { email, password } = parsed.data;
   if (!store.get(userKey(email))) {
     await createUser(store, email, password);
-    console.log(`[api] seeded demo user ${email}`);
+    console.log(`[api] demo user ready: ${email}`);
   }
 }

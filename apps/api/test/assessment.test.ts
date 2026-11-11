@@ -1,6 +1,5 @@
-import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { createApp } from "../src/app.js";
+import { appWithUsers, loggedInAgent } from "./helpers.js";
 import { confidenceCap, enforceEvidence, localToday } from "../src/assessment.js";
 import { rulesAssessment } from "../src/rules.js";
 import type { Signal, SourceStatus } from "../src/types.js";
@@ -73,11 +72,7 @@ describe("localToday", () => {
 });
 
 describe("POST /assess validation", () => {
-  async function loggedIn() {
-    const a = request.agent(createApp());
-    await a.post("/auth/signup").send({ email: "v@example.com", password: "password123" });
-    return a;
-  }
+  const loggedIn = async () => loggedInAgent(await appWithUsers("v@example.com"), "v@example.com");
   const tomorrow = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
 
   it("asks the user to choose for ambiguous cities", async () => {

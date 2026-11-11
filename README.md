@@ -10,7 +10,7 @@ cp apps/api/.env.example apps/api/.env   # add ANTHROPIC_API_KEY; set DEMO_EMAIL
 npm run dev                              # API on :4000, web on :3000
 ```
 
-Open http://localhost:3000 and log in with the demo account, or sign up.
+Open http://localhost:3000 and log in with the demo account from `apps/api/.env`. There is no sign-up flow: in a real deployment, users would sign in with their existing work account.
 Without `ANTHROPIC_API_KEY` the app still works: it falls back to a rules-only assessment.
 
 | Command | What it does |
@@ -55,14 +55,14 @@ free text ──(Claude: parse)──▶ form fields (user confirms)
 - **Current versus forecast.** FAA programs describe conditions *now*. They count fully only for today and tomorrow; otherwise they're shown as context.
 - **Never guess locations.** "Portland" asks OR or ME. "New York" checks JFK, LGA and EWR and compares them.
 - **Graceful degradation.** Each source can fail independently; the result shows which sources responded.
-- **Accounts are kept in memory.** Users, sessions (httpOnly cookie, 7 days) and saved routes (max 5) sit behind a `Store` interface backed by memory. **Restarting the API wipes them**; the demo user is re-created from `.env`.
+- **Accounts are kept in memory.** Users, sessions (httpOnly cookie, 7 days) and saved routes (max 5) sit behind a `Store` interface backed by memory. **Restarting the API wipes them**; the demo user (`DEMO_EMAIL` / `DEMO_PASSWORD`) is re-created from `.env` at startup. Accounts are provisioned, not self-registered.
 
 ## API
 
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/health` | Includes whether AI is configured |
-| POST | `/auth/signup`, `/auth/login`, `/auth/logout` · GET `/auth/me` | Email + password (scrypt), session cookie, login rate limiting |
+| POST | `/auth/login`, `/auth/logout` · GET `/auth/me` | Email + password (scrypt), session cookie, login rate limiting. No sign-up endpoint |
 | GET/POST | `/routes` · PUT/DELETE `/routes/:id` | Saved routes, max 5 per user |
 | POST | `/parse` | `{ text }` → `{ origin, destination, date, timeOfDay, notes }` |
 | POST | `/assess` | `{ origin, destination, date, timeOfDay?, notes? }` → assessment, signals, sources, notices. 409 with `choices` for ambiguous cities |

@@ -35,7 +35,6 @@ const post = <T>(path: string, data?: unknown) =>
 export const api = {
   me: () => call<{ user: User }>("/auth/me"),
   login: (email: string, password: string) => post<{ user: User }>("/auth/login", { email, password }),
-  signup: (email: string, password: string) => post<{ user: User }>("/auth/signup", { email, password }),
   logout: () => post<void>("/auth/logout"),
 
   listRoutes: () => call<{ routes: SavedRoute[]; max: number }>("/routes"),
