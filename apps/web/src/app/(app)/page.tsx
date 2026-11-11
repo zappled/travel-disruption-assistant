@@ -168,6 +168,10 @@ export default function CheckPage() {
   return (
     <>
       <h1 className="page-title">Check your trip</h1>
+      <p className="muted page-intro">
+        Trip Check combines live FAA airspace status, National Weather Service forecasts and alerts, aviation forecasts, and Open-Meteo
+        weather data, then summarises what could disrupt your trip and what to do about it.
+      </p>
 
       {routes.length > 0 && (
         <div className="saved" aria-label="Use a saved route">
@@ -311,12 +315,6 @@ export default function CheckPage() {
         </>
       )}
 
-      {!result && !assessing && !ambiguous && !error && (
-        <p className="muted small" style={{ marginTop: 24 }}>
-          Trip Check combines live FAA airspace status, National Weather Service forecasts and alerts, aviation forecasts, and Open-Meteo
-          weather data, then summarises what could disrupt your trip and what to do about it.
-        </p>
-      )}
     </>
   );
 }

@@ -234,6 +234,12 @@ a {
   font-size: 2rem;
   margin-bottom: 16px;
 }
+/* Intro line under a page title */
+.page-intro {
+  margin: -8px 0 20px;
+  max-width: 65ch;
+  font-size: 0.95rem;
+}
 
 /* ------------------------------------------------------------------ type */
 h1,
