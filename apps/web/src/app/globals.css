@@ -742,7 +742,14 @@ select.input {
 .results-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 24px;
+}
+.results-action-error {
+  text-align: right;
+  margin: 6px 0 0;
 }
 .results .strip {
   margin-top: 12px;

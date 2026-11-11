@@ -63,6 +63,7 @@ export default function CheckPage() {
   const [result, setResult] = useState<(AssessResponse & { historyId: string }) | null>(null);
   const [ambiguous, setAmbiguous] = useState<AmbiguousResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [checked, setChecked] = useState<{ origin: string; destination: string; prompt: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -104,16 +105,18 @@ export default function CheckPage() {
     setError(null);
     setAmbiguous(null);
     setResult(null);
+    setSaveError(null);
     try {
-      setResult(
-        await api.assess({
-          origin: t.origin,
-          destination: t.destination,
-          date: t.date,
-          timeOfDay: t.timeOfDay || null,
-          notes: t.notes || null,
-        }),
-      );
+      const res = await api.assess({
+        origin: t.origin,
+        destination: t.destination,
+        date: t.date,
+        timeOfDay: t.timeOfDay || null,
+        notes: t.notes || null,
+      });
+      setResult(res);
+      // Remember exactly what was checked, so "Save route" saves this trip even if the form changes.
+      setChecked({ origin: t.origin.trim(), destination: t.destination.trim(), prompt: t.prompt.trim() || null });
     } catch (err) {
       if (handleAuthError(err, t)) return;
       if (err instanceof ApiError && err.body.error === "ambiguous_location") {
@@ -141,16 +144,13 @@ export default function CheckPage() {
     setError(null);
   }
 
-  /** One click: the route path, plus the trip description if there is one. */
+  /** One click: the checked route's path, plus its description if there was one. */
   async function saveRoute() {
+    if (!checked) return;
     setSaveError(null);
     setSaving(true);
     try {
-      const { route } = await api.saveRoute({
-        origin: trip.origin.trim(),
-        destination: trip.destination.trim(),
-        prompt: trip.prompt.trim() || null,
-      });
+      const { route } = await api.saveRoute(checked);
       setRoutes((rs) => [...rs, route]);
     } catch (err) {
       if (!handleAuthError(err, trip)) setSaveError(err instanceof ApiError ? err.message : "Couldn't save this route.");
@@ -161,9 +161,23 @@ export default function CheckPage() {
 
   const canAssess = trip.origin.trim() && trip.destination.trim() && trip.date && !assessing;
   const routeFull = routes.length >= maxRoutes;
-  const alreadySaved = routes.some(
-    (r) => r.origin.toLowerCase() === trip.origin.trim().toLowerCase() && r.destination.toLowerCase() === trip.destination.trim().toLowerCase(),
-  );
+  const alreadySaved =
+    !!checked &&
+    routes.some(
+      (r) => r.origin.toLowerCase() === checked.origin.toLowerCase() && r.destination.toLowerCase() === checked.destination.toLowerCase(),
+    );
+
+  // Shown in the results toolbar, beside "Save as PDF".
+  const saveRouteAction =
+    routeFull && !alreadySaved ? (
+      <span className="small muted">
+        {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to save this one.
+      </span>
+    ) : (
+      <button type="button" className="btn btn-secondary" disabled={alreadySaved || saving} onClick={saveRoute}>
+        {alreadySaved ? "Route saved" : saving ? "Saving…" : "Save route"}
+      </button>
+    );
 
   return (
     <>
@@ -252,22 +266,7 @@ export default function CheckPage() {
           <button className="btn btn-primary" type="submit" disabled={!canAssess}>
             {assessing ? "Checking…" : "Check this trip"}
           </button>
-          {routeFull && !alreadySaved ? (
-            <span className="small muted">
-              {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to make room.
-            </span>
-          ) : (
-            <button
-              type="button"
-              className="btn-link"
-              disabled={!trip.origin.trim() || !trip.destination.trim() || alreadySaved || saving}
-              onClick={saveRoute}
-            >
-              {alreadySaved ? "Route saved" : saving ? "Saving…" : "Save route"}
-            </button>
-          )}
         </div>
-        {saveError && <p className="error-text">{saveError}</p>}
       </form>
 
       {error && (
@@ -308,7 +307,7 @@ export default function CheckPage() {
 
       {result && (
         <>
-          <Results data={result} />
+          <Results data={result} actions={saveRouteAction} actionError={saveError} />
           <p className="small muted no-print">
             Saved to <Link href={`/history/${result.historyId}`}>Past results</Link>.
           </p>

@@ -68,7 +68,16 @@ function printResult(root: HTMLElement | null, title: string) {
   window.print();
 }
 
-export function Results({ data }: { data: AssessResponse }) {
+export function Results({
+  data,
+  actions,
+  actionError,
+}: {
+  data: AssessResponse;
+  /** Extra toolbar buttons shown before "Save as PDF" (e.g. "Save route" on the Check page). */
+  actions?: React.ReactNode;
+  actionError?: string | null;
+}) {
   const { route, assessment: a, signals, sources, notices } = data;
   const rootRef = useRef<HTMLElement>(null);
   const byId = new Map(signals.map((s) => [s.id, s]));
@@ -83,10 +92,16 @@ export function Results({ data }: { data: AssessResponse }) {
   return (
     <section aria-live="polite" ref={rootRef} className="results">
       <div className="results-actions no-print">
+        {actions}
         <button type="button" className="btn btn-secondary" onClick={() => printResult(rootRef.current, fileTitle)}>
           Save as PDF
         </button>
       </div>
+      {actionError && (
+        <p className="error-text results-action-error no-print" role="alert">
+          {actionError}
+        </p>
+      )}
       <div className="print-only print-header">
         <strong>Trip Check report</strong>
         <span>
