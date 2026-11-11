@@ -692,6 +692,19 @@ select.input {
   border-radius: 0 var(--radius-s) var(--radius-s) 0;
 }
 
+/* ------------------------------------------------------------------ results toolbar + print */
+.results-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+.results .strip {
+  margin-top: 12px;
+}
+.print-only {
+  display: none;
+}
+
 /* ------------------------------------------------------------------ result card (risks + actions) */
 .card {
   background: var(--surface);
@@ -1106,4 +1119,105 @@ select.input {
   flex-direction: column;
   gap: 14px;
   margin-top: 20px;
+}
+
+/* ------------------------------------------------------------------ print / Save as PDF
+   Always light, only the result, colours kept, no awkward page breaks. */
+@media print {
+  :root,
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --paper: #ffffff;
+    --surface: #ffffff;
+    --ink: #14243b;
+    --ink-soft: #4d5d72;
+    --rule: #d3dbe4;
+    --chart: #2c5ba8;
+    --risk-low: #2f7d5b;
+    --risk-moderate: #b07a12;
+    --risk-high: #c4532d;
+    --risk-severe: #a3203a;
+    --risk-low-bg: #e3f1ea;
+    --risk-moderate-bg: #f8eed8;
+    --risk-high-bg: #f8e4dc;
+    --risk-severe-bg: #f6dde2;
+  }
+  @page {
+    margin: 14mm;
+  }
+  html {
+    font-size: 11pt;
+  }
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  html,
+  body {
+    background: #ffffff;
+  }
+
+  /* Only the result itself */
+  .sidenav,
+  .page-title,
+  .saved,
+  .planner,
+  .checking,
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+  .app {
+    display: block;
+  }
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .print-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.9rem;
+  }
+  .print-header strong {
+    font-family: var(--font-signage);
+    font-size: 1.3rem;
+  }
+
+  /* Evidence is expanded for print; hide the disclosure toggles' arrows */
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+  .risk-explainer summary,
+  .evidence-toggle summary {
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+
+  /* Keep things whole across pages */
+  .strip,
+  .risk,
+  .evidence li,
+  .when,
+  .risk-explainer-row,
+  .sources tr {
+    break-inside: avoid;
+  }
+  .card-title,
+  .section-title {
+    break-after: avoid;
+  }
+  a {
+    color: var(--chart);
+  }
 }

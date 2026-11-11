@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import type { AssessResponse } from "@/lib/api";
 import { RISK_LEVELS, headlineWithoutLevel, type RiskLevel } from "@/lib/riskLevels";
 
@@ -46,17 +47,52 @@ function EvidenceItem({ s }: { s: Signal }) {
   );
 }
 
+/**
+ * Print the result via the browser's print dialog ("Save as PDF"). Opens every
+ * evidence section and sets the document title (the default PDF file name)
+ * for the duration of the print, then restores both.
+ */
+function printResult(root: HTMLElement | null, title: string) {
+  if (!root) return;
+  const details = Array.from(root.querySelectorAll("details"));
+  const wasOpen = details.map((d) => d.open);
+  details.forEach((d) => (d.open = true));
+  const prevTitle = document.title;
+  document.title = title;
+  const restore = () => {
+    details.forEach((d, i) => (d.open = wasOpen[i]));
+    document.title = prevTitle;
+    window.removeEventListener("afterprint", restore);
+  };
+  window.addEventListener("afterprint", restore);
+  window.print();
+}
+
 export function Results({ data }: { data: AssessResponse }) {
   const { route, assessment: a, signals, sources, notices } = data;
+  const rootRef = useRef<HTMLElement>(null);
   const byId = new Map(signals.map((s) => [s.id, s]));
   const codes = (list: typeof route.origin) => list.map((x) => x.iata);
   const fair = signals.filter((s) => s.kind === "fair_weather");
   const priorities = (["now", "before_travel", "day_of_travel"] as const).filter((p) =>
     a.recommendations.some((r) => r.priority === p),
   );
+  const routeText = `${codes(route.origin).join("/")} to ${codes(route.destination).join("/")}`;
+  const fileTitle = `Trip Check - ${codes(route.origin)[0]} to ${codes(route.destination)[0]} - ${route.date}`;
 
   return (
-    <section aria-live="polite">
+    <section aria-live="polite" ref={rootRef} className="results">
+      <div className="results-actions no-print">
+        <button type="button" className="btn btn-secondary" onClick={() => printResult(rootRef.current, fileTitle)}>
+          Save as PDF
+        </button>
+      </div>
+      <div className="print-only print-header">
+        <strong>Trip Check report</strong>
+        <span>
+          {routeText}, {formatDate(route.date)}. Checked {formatTime(data.generatedAt)}.
+        </span>
+      </div>
       <div className="strip" data-risk={a.overallRisk}>
         <div className="strip-route" aria-label={`From ${codes(route.origin).join(", ")} to ${codes(route.destination).join(", ")}`}>
           <RouteCodes list={codes(route.origin)} />

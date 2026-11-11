@@ -34,7 +34,7 @@ export default function PastResultPage() {
 
   return (
     <>
-      <p className="small">
+      <p className="small no-print">
         <Link href="/history">Past results</Link>
       </p>
       {error && <p className="error-text">{error}</p>}
@@ -46,7 +46,7 @@ export default function PastResultPage() {
               {new Date(entry.createdAt).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.
               Conditions may have changed since.
             </span>
-            <span className="snapshot-actions">
+            <span className="snapshot-actions no-print">
               <button className="btn btn-primary" onClick={() => openInChecker({ ...entry.request, timeOfDay: entry.request.timeOfDay ?? "", notes: entry.request.notes ?? "" })}>
                 Check again with fresh data
               </button>

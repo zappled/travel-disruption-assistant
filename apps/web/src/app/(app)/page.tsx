@@ -301,7 +301,7 @@ export default function CheckPage() {
       {result && (
         <>
           <Results data={result} />
-          <p className="small muted">
+          <p className="small muted no-print">
             Saved to <Link href={`/history/${result.historyId}`}>Past results</Link>.
           </p>
         </>
