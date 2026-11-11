@@ -5,16 +5,24 @@ import { requireAuth } from "./auth.js";
 import type { Store } from "./store.js";
 import { MAX_SAVED_ROUTES, type SavedRoute } from "./types.js";
 
-// A saved route is its path plus an optional description (no separate name).
+// A saved route is its path, an optional usual time of day, and an optional description.
 const routeInputSchema = z.object({
   origin: z.string().trim().min(1, "Origin is required").max(80),
   destination: z.string().trim().min(1, "Destination is required").max(80),
   prompt: z.string().trim().max(500).nullish().transform((v) => v || null),
+  timeOfDay: z
+    .enum(["morning", "afternoon", "evening", "overnight"])
+    .nullish()
+    .transform((v) => v ?? null),
 });
 
+type RouteKey = Pick<SavedRoute, "origin" | "destination" | "timeOfDay">;
 const routesKey = (userId: string) => `routes:${userId}`;
-const samePath = (a: { origin: string; destination: string }, b: { origin: string; destination: string }) =>
-  a.origin.toLowerCase() === b.origin.toLowerCase() && a.destination.toLowerCase() === b.destination.toLowerCase();
+/** Same path and same time of day (JFK→SFO morning and evening are different routes). */
+const samePath = (a: RouteKey, b: RouteKey) =>
+  a.origin.toLowerCase() === b.origin.toLowerCase() &&
+  a.destination.toLowerCase() === b.destination.toLowerCase() &&
+  (a.timeOfDay ?? null) === (b.timeOfDay ?? null);
 
 export function savedRoutesRouter(store: Store) {
   const router = Router();

@@ -174,6 +174,8 @@ export interface SavedRoute {
   destination: string;
   /** Optional description (the free-text trip description) */
   prompt: string | null;
+  /** Usual departure window; null = any time */
+  timeOfDay: TimeOfDay | null;
   createdAt: string;
 }
 

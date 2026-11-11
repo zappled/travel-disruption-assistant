@@ -6,7 +6,7 @@ import { AirportInput } from "@/components/AirportInput";
 import { takeDraft, useApp } from "@/components/AppShell";
 import { InfoTip } from "@/components/InfoTip";
 import { Results } from "@/components/Results";
-import { TIME_WINDOWS } from "@tda/api/types";
+import { TIME_WINDOWS, type TimeOfDay } from "@tda/api/types";
 import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute } from "@/lib/api";
 
 const MAX_DAYS = 14;
@@ -64,7 +64,7 @@ export default function CheckPage() {
   const [resultSave, setResultSave] = useState<"idle" | "saving" | "saved">("idle");
   const [ambiguous, setAmbiguous] = useState<AmbiguousResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [checked, setChecked] = useState<{ origin: string; destination: string; prompt: string | null } | null>(null);
+  const [checked, setChecked] = useState<Omit<SavedRoute, "id" | "createdAt"> | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -118,7 +118,12 @@ export default function CheckPage() {
       });
       setResult(res);
       // Remember exactly what was checked, so "Save route" saves this trip even if the form changes.
-      setChecked({ origin: t.origin.trim(), destination: t.destination.trim(), prompt: t.prompt.trim() || null });
+      setChecked({
+        origin: t.origin.trim(),
+        destination: t.destination.trim(),
+        prompt: t.prompt.trim() || null,
+        timeOfDay: (t.timeOfDay || null) as TimeOfDay | null,
+      });
     } catch (err) {
       if (handleAuthError(err, t)) return;
       if (err instanceof ApiError && err.body.error === "ambiguous_location") {
@@ -139,7 +144,7 @@ export default function CheckPage() {
   }
 
   function applyRoute(r: SavedRoute) {
-    setTrip((t) => ({ ...t, prompt: r.prompt ?? "", origin: r.origin, destination: r.destination, timeOfDay: "", notes: "" }));
+    setTrip((t) => ({ ...t, prompt: r.prompt ?? "", origin: r.origin, destination: r.destination, timeOfDay: r.timeOfDay ?? "", notes: "" }));
     if (r.prompt) setAiOpen(true); // show the route's description (doesn't change the saved preference)
     setResult(null);
     setAmbiguous(null);
@@ -180,7 +185,10 @@ export default function CheckPage() {
   const alreadySaved =
     !!checked &&
     routes.some(
-      (r) => r.origin.toLowerCase() === checked.origin.toLowerCase() && r.destination.toLowerCase() === checked.destination.toLowerCase(),
+      (r) =>
+        r.origin.toLowerCase() === checked.origin.toLowerCase() &&
+        r.destination.toLowerCase() === checked.destination.toLowerCase() &&
+        (r.timeOfDay ?? null) === checked.timeOfDay,
     );
 
   // Shown in the results toolbar, before "Save as PDF".
@@ -217,6 +225,7 @@ export default function CheckPage() {
                 <span className="codes">
                   {r.origin} → {r.destination}
                 </span>
+                {r.timeOfDay && <span className="chip-when">{TIME_WINDOWS[r.timeOfDay].label.split(" /")[0]}</span>}
               </button>
             </span>
           ))}

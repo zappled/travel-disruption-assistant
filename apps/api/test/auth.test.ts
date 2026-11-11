@@ -112,6 +112,18 @@ describe("saved routes", () => {
     expect(clash.status).toBe(409);
   });
 
+  it("stores the usual time of day and treats different times as different routes", async () => {
+    const a = await loggedInAgent(await appWithUsers("tod@example.com"), "tod@example.com");
+    const morning = await a.post("/routes").send({ origin: "JFK", destination: "SFO", timeOfDay: "morning" });
+    expect(morning.status).toBe(201);
+    expect(morning.body.route.timeOfDay).toBe("morning");
+    expect((await a.post("/routes").send({ origin: "JFK", destination: "SFO", timeOfDay: "evening" })).status).toBe(201);
+    expect((await a.post("/routes").send({ origin: "JFK", destination: "SFO", timeOfDay: "morning" })).status).toBe(409);
+    const anyTime = await a.post("/routes").send({ origin: "JFK", destination: "SFO" });
+    expect(anyTime.body.route.timeOfDay).toBeNull();
+    expect((await a.post("/routes").send({ origin: "JFK", destination: "SFO", timeOfDay: "lunchtime" })).status).toBe(400);
+  });
+
   it("isolates routes between users", async () => {
     const app = await appWithUsers("g@example.com", "h@example.com");
     const u1 = await loggedInAgent(app, "g@example.com");

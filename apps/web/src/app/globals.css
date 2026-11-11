@@ -510,6 +510,12 @@ select.input {
   cursor: pointer;
   padding: 5px 14px;
 }
+/* Usual time of day after the path, e.g. "JFK → SFO  Morning" */
+.saved-chip .chip-when {
+  margin-left: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
 /* Chips show just the route path, in the signage face */
 .saved-chip .codes {
   font-family: var(--font-signage);
@@ -1010,6 +1016,12 @@ select.input {
   font-weight: 600;
   font-size: 1.35rem;
   letter-spacing: 0.02em;
+}
+.list-when {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink-soft);
 }
 .list-note {
   margin: 6px 0 0;

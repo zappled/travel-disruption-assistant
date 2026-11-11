@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { AirportInput } from "@/components/AirportInput";
 import { useApp } from "@/components/AppShell";
+import { TIME_WINDOWS, type TimeOfDay } from "@tda/api/types";
 import { api, ApiError, type SavedRoute } from "@/lib/api";
 
 type RouteFields = Omit<SavedRoute, "id" | "createdAt">;
-const EMPTY: RouteFields = { origin: "", destination: "", prompt: null };
+const EMPTY: RouteFields = { origin: "", destination: "", prompt: null, timeOfDay: null };
+const TIME_KEYS = Object.keys(TIME_WINDOWS) as TimeOfDay[];
+
+/** "Morning (5am–12pm)" */
+function timeLabel(t: TimeOfDay) {
+  return `${TIME_WINDOWS[t].label} (${TIME_WINDOWS[t].range})`;
+}
 
 function RouteForm({
   initial,
@@ -43,6 +50,21 @@ function RouteForm({
       <div className="planner-grid">
         <AirportInput label="From" value={f.origin} onChange={(origin) => set({ origin })} />
         <AirportInput label="To" value={f.destination} onChange={(destination) => set({ destination })} />
+        <label className="field">
+          Usual time of day
+          <select
+            className="input"
+            value={f.timeOfDay ?? ""}
+            onChange={(e) => set({ timeOfDay: (e.target.value || null) as TimeOfDay | null })}
+          >
+            <option value="">Any time</option>
+            {TIME_KEYS.map((k) => (
+              <option key={k} value={k}>
+                {timeLabel(k)}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="field span-2">
           Description (optional)
           <textarea className="textarea" value={f.prompt ?? ""} maxLength={500} onChange={(e) => set({ prompt: e.target.value })} placeholder="e.g. Usually the Monday 7am flight out of JFK" />
@@ -110,7 +132,7 @@ export default function SavedRoutesPage() {
           editing === r.id ? (
             <li key={r.id} className="list-item">
               <RouteForm
-                initial={{ origin: r.origin, destination: r.destination, prompt: r.prompt }}
+                initial={{ origin: r.origin, destination: r.destination, prompt: r.prompt, timeOfDay: r.timeOfDay ?? null }}
                 submitLabel="Save changes"
                 onCancel={() => setEditing(null)}
                 onSubmit={(fields) =>
@@ -128,10 +150,14 @@ export default function SavedRoutesPage() {
                 <h2 className="list-codes">
                   {r.origin} → {r.destination}
                 </h2>
+                <p className="list-when">{r.timeOfDay ? timeLabel(r.timeOfDay) : "Any time of day"}</p>
                 {r.prompt && <p className="list-note">{r.prompt}</p>}
               </div>
               <div className="list-actions">
-                <button className="btn btn-primary" onClick={() => openInChecker({ origin: r.origin, destination: r.destination, prompt: r.prompt ?? "" })}>
+                <button className="btn btn-primary" onClick={() =>
+                    openInChecker({ origin: r.origin, destination: r.destination, prompt: r.prompt ?? "", timeOfDay: r.timeOfDay ?? "" })
+                  }
+                >
                   Check this route
                 </button>
                 <button className="btn-link" onClick={() => setEditing(r.id)}>
