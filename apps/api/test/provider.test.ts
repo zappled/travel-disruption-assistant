@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { AssessmentSchema } from "../src/ai/assess.js";
-import { getProviderState, resetProviderForTests } from "../src/ai/client.js";
+import { getProviderState, isRetryableGeminiError, resetProviderForTests } from "../src/ai/client.js";
 import { ParsedTripSchema } from "../src/ai/parse.js";
 
 // Point the Anthropic CLI lookup at an empty dir so a real login on this
@@ -42,6 +42,19 @@ describe("AI provider selection", () => {
     const s = await getProviderState();
     expect(s.auth).toBe("none");
     expect(s.provider).toBeNull();
+  });
+});
+
+describe("Gemini fallback decision", () => {
+  it("retries on busy, rate-limited, server errors, retired models and timeouts only", () => {
+    expect(isRetryableGeminiError({ status: 503 })).toBe(true);
+    expect(isRetryableGeminiError({ status: 404 })).toBe(true); // model retired / unavailable
+    expect(isRetryableGeminiError({ status: 429 })).toBe(true);
+    expect(isRetryableGeminiError({ status: 500 })).toBe(true);
+    expect(isRetryableGeminiError(Object.assign(new Error("t"), { name: "TimeoutError" }))).toBe(true);
+    expect(isRetryableGeminiError({ status: 400 })).toBe(false); // bad request won't improve on another model
+    expect(isRetryableGeminiError({ status: 403 })).toBe(false); // bad key
+    expect(isRetryableGeminiError(new SyntaxError("bad JSON"))).toBe(false);
   });
 });
 

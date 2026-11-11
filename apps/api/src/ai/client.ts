@@ -14,6 +14,12 @@ export const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5-5";
 // gemini-3.5-flash: measured ~3s with low thinking on the free tier (2026-11-11);
 // gemini-3.8-flash took >60s per call there, too slow for interactive use.
 export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
+/**
+ * Tried in order when the previous model is busy or rate-limited (free-tier
+ * 503 "high demand" happens). Lighter models answered in ~2-4s in testing.
+ */
+export const GEMINI_FALLBACK_MODELS = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+const GEMINI_ATTEMPT_TIMEOUT_MS = 30_000;
 
 /** Which credentials are in use, shown on /health and in the startup log. */
 export type AiAuth = "api_key" | "auth_token" | "cli_login" | "gemini_key" | "none";
@@ -28,8 +34,9 @@ export interface StructuredRequest<S extends z.ZodType> {
 
 export interface AiProvider {
   id: "claude" | "gemini";
-  label: string; // e.g. "Claude (claude-opus-5-5)"
-  generate<S extends z.ZodType>(req: StructuredRequest<S>): Promise<z.infer<S>>;
+  label: string; // primary model, e.g. "Claude (claude-opus-5-5)"
+  /** `model` is the label of the model that actually answered (may be a fallback). */
+  generate<S extends z.ZodType>(req: StructuredRequest<S>): Promise<{ output: z.infer<S>; model: string }>;
 }
 
 /** Thrown when the model declines; callers treat it like any other AI failure. */
@@ -53,7 +60,7 @@ function claudeProvider(client: Anthropic): AiProvider {
       });
       if (response.stop_reason === "refusal") throw new RefusalError("Claude declined this request");
       if (!response.parsed_output) throw new Error(`No structured output from Claude (stop_reason: ${response.stop_reason})`);
-      return response.parsed_output as z.infer<typeof req.schema>;
+      return { output: response.parsed_output as z.infer<typeof req.schema>, model: `Claude (${CLAUDE_MODEL})` };
     },
   };
 }
@@ -66,29 +73,61 @@ function toGeminiSchema(schema: z.ZodType): unknown {
   return json;
 }
 
+/**
+ * Worth trying on another model: busy/server errors, rate limits, timeouts,
+ * and 404 (model retired or unavailable to this key, which Google does).
+ */
+export function isRetryableGeminiError(err: unknown): boolean {
+  const status = (err as { status?: unknown })?.status;
+  if (typeof status === "number") return status === 404 || status === 429 || status >= 500;
+  const name = (err as { name?: unknown })?.name;
+  return name === "TimeoutError" || name === "AbortError";
+}
+
 function geminiProvider(apiKey: string): AiProvider {
   const ai = new GoogleGenAI({ apiKey });
+  const models = [...new Set([GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS])];
+
+  async function attempt<S extends z.ZodType>(model: string, req: StructuredRequest<S>): Promise<z.infer<S>> {
+    const response = await ai.models.generateContent({
+      model,
+      contents: req.user,
+      config: {
+        systemInstruction: req.system,
+        responseMimeType: "application/json",
+        responseJsonSchema: toGeminiSchema(req.schema),
+        maxOutputTokens: req.maxTokens,
+        // Same effort knob as the Claude path (low for parsing, medium for assessing).
+        // Flash-lite models are used with their default thinking.
+        ...(model.includes("lite")
+          ? {}
+          : { thinkingConfig: { thinkingLevel: req.effort === "low" ? ThinkingLevel.LOW : ThinkingLevel.MEDIUM } }),
+        abortSignal: AbortSignal.timeout(GEMINI_ATTEMPT_TIMEOUT_MS),
+      },
+    });
+    const text = response.text;
+    if (!text) throw new Error(`No output from Gemini ${model} (finish reason: ${response.candidates?.[0]?.finishReason ?? "unknown"})`);
+    // Validate exactly as the Claude path does; malformed output → rules fallback.
+    return req.schema.parse(JSON.parse(text)) as z.infer<S>;
+  }
+
   return {
     id: "gemini",
     label: `Gemini (${GEMINI_MODEL})`,
     async generate(req) {
-      const response = await ai.models.generateContent({
-        model: GEMINI_MODEL,
-        contents: req.user,
-        config: {
-          systemInstruction: req.system,
-          responseMimeType: "application/json",
-          responseJsonSchema: toGeminiSchema(req.schema),
-          maxOutputTokens: req.maxTokens,
-          // Same effort knob as the Claude path: low for parsing, medium for assessing.
-          thinkingConfig: { thinkingLevel: req.effort === "low" ? ThinkingLevel.LOW : ThinkingLevel.MEDIUM },
-          abortSignal: AbortSignal.timeout(60_000),
-        },
-      });
-      const text = response.text;
-      if (!text) throw new Error(`No output from Gemini (finish reason: ${response.candidates?.[0]?.finishReason ?? "unknown"})`);
-      // Validate exactly as the Claude path does; malformed output → rules fallback.
-      return req.schema.parse(JSON.parse(text)) as z.infer<typeof req.schema>;
+      let lastErr: unknown;
+      for (const [i, model] of models.entries()) {
+        try {
+          return { output: await attempt(model, req), model: `Gemini (${model})` };
+        } catch (err) {
+          lastErr = err;
+          const next = models[i + 1];
+          if (!next || !isRetryableGeminiError(err)) throw err;
+          const why = (err as { status?: number }).status ?? (err as Error).name;
+          console.warn(`[ai] Gemini ${model} unavailable (${why}); trying ${next}`);
+        }
+      }
+      throw lastErr;
     },
   };
 }

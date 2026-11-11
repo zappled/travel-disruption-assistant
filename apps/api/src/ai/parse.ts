@@ -21,11 +21,12 @@ Keep city names as the user wrote them (expand obvious abbreviations: "NYC" → 
 export async function parseTripText(text: string, today: string): Promise<ParsedTrip> {
   const provider = await getProvider();
   const weekday = new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
-  return provider.generate({
+  const { output } = await provider.generate({
     system: SYSTEM,
     user: `Current date: ${today} (${weekday}).\n\n<message>\n${text}\n</message>`,
     schema: ParsedTripSchema,
     effort: "low",
     maxTokens: 2000,
   });
+  return output;
 }

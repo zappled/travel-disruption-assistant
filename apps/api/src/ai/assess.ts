@@ -93,12 +93,12 @@ export async function assessWithAi(
   ctx: AssessContext,
 ): Promise<{ assessment: Omit<Assessment, "generatedBy" | "aiModel">; model: string }> {
   const provider = await getProvider();
-  const assessment = await provider.generate({
+  const { output: assessment, model } = await provider.generate({
     system: SYSTEM,
     user: buildPrompt(ctx),
     schema: AssessmentSchema,
     effort: "medium",
     maxTokens: 16000,
   });
-  return { assessment, model: provider.label };
+  return { assessment, model };
 }
