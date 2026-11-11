@@ -520,6 +520,13 @@ select.input {
   font-size: 0.85rem;
   color: var(--ink-soft);
 }
+/* The two fonts reserve different space above/below their letters, so trim
+   each box to cap height; then flex centring lines up the visible letters. */
+.saved-chip .codes,
+.saved-chip .chip-when {
+  line-height: 1;
+  text-box: trim-both cap alphabetic;
+}
 /* Chips show just the route path, in the signage face */
 .saved-chip .codes {
   font-family: var(--font-signage);
