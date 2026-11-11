@@ -692,6 +692,39 @@ select.input {
   border-radius: 0 var(--radius-s) var(--radius-s) 0;
 }
 
+/* ------------------------------------------------------------------ result card (risks + actions) */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  padding: 20px 22px;
+  margin-top: 24px;
+}
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.card-divider {
+  border-top: 1px dashed var(--rule);
+  margin: 20px 0 18px;
+}
+/* Inside the card, risks are separated by rules but the card frames them. */
+.risk-card .risk:first-of-type {
+  border-top: none;
+  padding-top: 6px;
+}
+.risk-card .risk:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.risk-card .evidence li {
+  background: var(--paper);
+}
+.risk-card .when:first-of-type {
+  margin-top: 4px;
+}
+
 /* ------------------------------------------------------------------ risks */
 .risk {
   border-top: 1px solid var(--rule);

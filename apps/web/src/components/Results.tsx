@@ -95,7 +95,8 @@ export function Results({ data }: { data: AssessResponse }) {
         </p>
       ))}
 
-      <h2 className="section-title">What could go wrong</h2>
+      <div className="card risk-card">
+      <h2 className="card-title">What could go wrong</h2>
       {a.risks.length === 0 ? (
         <div>
           <p>Nothing notable found for this trip.</p>
@@ -141,7 +142,8 @@ export function Results({ data }: { data: AssessResponse }) {
         </div>
       )}
 
-      <h2 className="section-title">What to do</h2>
+      <div className="card-divider" />
+      <h2 className="card-title">What to do</h2>
       {priorities.map((p) => (
         <div className="when" key={p}>
           <h3>{PRIORITY_LABEL[p]}</h3>
@@ -156,6 +158,7 @@ export function Results({ data }: { data: AssessResponse }) {
           </ul>
         </div>
       ))}
+      </div>
 
       <h2 className="section-title">Sources checked</h2>
       <table className="sources">
