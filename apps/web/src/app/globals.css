@@ -553,6 +553,103 @@ select.input {
   font-size: 1.3rem;
   font-weight: 700;
 }
+/* Risk scale: four equal steps, the current one filled in its risk colour */
+.risk-scale-wrap {
+  margin-top: 14px;
+  max-width: 420px;
+}
+.risk-scale {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.risk-scale li {
+  --c: var(--risk-low);
+  padding-top: 8px;
+  border-top: 6px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.risk-scale li[data-level="moderate"] {
+  --c: var(--risk-moderate);
+}
+.risk-scale li[data-level="high"] {
+  --c: var(--risk-high);
+}
+.risk-scale li[data-level="severe"] {
+  --c: var(--risk-severe);
+}
+.risk-scale li[aria-current="true"] {
+  border-top-color: var(--c);
+  color: var(--ink);
+  font-weight: 700;
+}
+.risk-explainer {
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+.risk-explainer summary {
+  cursor: pointer;
+  color: var(--chart);
+  width: fit-content;
+}
+.risk-explainer dl {
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.risk-explainer-row {
+  --c: var(--risk-low);
+  --bg: var(--risk-low-bg);
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 4px 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--c);
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+}
+.risk-explainer-row[data-level="moderate"] {
+  --c: var(--risk-moderate);
+  --bg: var(--risk-moderate-bg);
+}
+.risk-explainer-row[data-level="high"] {
+  --c: var(--risk-high);
+  --bg: var(--risk-high-bg);
+}
+.risk-explainer-row[data-level="severe"] {
+  --c: var(--risk-severe);
+  --bg: var(--risk-severe-bg);
+}
+.risk-explainer-row[data-current] {
+  background: var(--bg);
+}
+.risk-explainer-row dt {
+  font-family: var(--font-signage);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--c);
+}
+.risk-explainer-you {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.risk-explainer-row dd {
+  margin: 0;
+}
+.risk-explainer-row dd p {
+  margin: 0 0 4px;
+}
+@media (max-width: 560px) {
+  .risk-explainer-row {
+    grid-template-columns: 1fr;
+  }
+}
 .verdict-summary {
   margin: 10px 0 0;
   max-width: 65ch;

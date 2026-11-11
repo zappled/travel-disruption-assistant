@@ -1,6 +1,7 @@
 "use client";
 
 import type { AssessResponse } from "@/lib/api";
+import { RISK_LEVELS, type RiskLevel } from "@/lib/riskLevels";
 
 type Signal = AssessResponse["signals"][number];
 type Recommendation = AssessResponse["assessment"]["recommendations"][number];
@@ -74,6 +75,7 @@ export function Results({ data }: { data: AssessResponse }) {
           <span className="risk-badge">{RISK_LABEL[a.overallRisk]}</span>
           <h2 className="verdict-headline">{a.headline}</h2>
         </div>
+        <RiskScale current={a.overallRisk} />
         <p className="verdict-summary">{a.summary}</p>
         <div className="confidence">
           <span className="confidence-meter" aria-hidden="true">
@@ -186,6 +188,40 @@ export function Results({ data }: { data: AssessResponse }) {
         Checked {formatTime(data.generatedAt)}.
       </p>
     </section>
+  );
+}
+
+/** Four-step scale with the current level marked, plus an explainer toggle. */
+function RiskScale({ current }: { current: RiskLevel }) {
+  return (
+    <div className="risk-scale-wrap">
+      <ol className="risk-scale" aria-label="Risk scale">
+        {RISK_LEVELS.map((r) => (
+          <li key={r.level} data-level={r.level} aria-current={r.level === current ? "true" : undefined}>
+            {r.label}
+          </li>
+        ))}
+      </ol>
+      <details className="risk-explainer">
+        <summary>What does this mean?</summary>
+        <dl>
+          {RISK_LEVELS.map((r) => (
+            <div key={r.level} className="risk-explainer-row" data-level={r.level} data-current={r.level === current || undefined}>
+              <dt>
+                {r.label}
+                {r.level === current && <span className="risk-explainer-you"> (this trip)</span>}
+              </dt>
+              <dd>
+                <p>{r.meaning}</p>
+                <p>
+                  <strong>What to do:</strong> {r.todo}
+                </p>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </details>
+    </div>
   );
 }
 
