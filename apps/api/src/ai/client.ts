@@ -7,11 +7,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { defaultCredentials } from "@anthropic-ai/sdk/lib/credentials/credential-chain";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { z } from "zod";
 
 export const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5-5";
-export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
+// gemini-3.5-flash: measured ~3s with low thinking on the free tier (2026-11-11);
+// gemini-3.8-flash took >60s per call there, too slow for interactive use.
+export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 
 /** Which credentials are in use, shown on /health and in the startup log. */
 export type AiAuth = "api_key" | "auth_token" | "cli_login" | "gemini_key" | "none";
@@ -78,6 +80,8 @@ function geminiProvider(apiKey: string): AiProvider {
           responseMimeType: "application/json",
           responseJsonSchema: toGeminiSchema(req.schema),
           maxOutputTokens: req.maxTokens,
+          // Same effort knob as the Claude path: low for parsing, medium for assessing.
+          thinkingConfig: { thinkingLevel: req.effort === "low" ? ThinkingLevel.LOW : ThinkingLevel.MEDIUM },
           abortSignal: AbortSignal.timeout(60_000),
         },
       });
