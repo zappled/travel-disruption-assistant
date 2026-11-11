@@ -833,8 +833,9 @@ h3 {
   border: 1px solid var(--rule);
   border-radius: var(--radius-s);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent);
-  max-height: 320px;
+  max-height: 320px; /* fallback; AirportInput fits this to the space below the field */
   overflow-y: auto;
+  overscroll-behavior: contain; /* scrolling the list doesn't scroll the page */
   font-weight: 400;
 }
 /* One line per suggestion: code, a fixed 14px gap, then place and muted airport name. */

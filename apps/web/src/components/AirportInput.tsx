@@ -110,6 +110,26 @@ export function AirportInput({
     };
   }, [open, results]);
 
+  // Fit the dropdown to the space between the field and the bottom of the
+  // window; anything beyond that scrolls inside the list. Set directly on the
+  // element (not React state) so resizing doesn't re-render the list.
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!open || !list) return;
+    const fit = () => {
+      const top = list.getBoundingClientRect().top;
+      const available = window.innerHeight - top - 16;
+      list.style.maxHeight = `${Math.max(140, Math.min(available, 420))}px`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    window.addEventListener("scroll", fit, true);
+    return () => {
+      window.removeEventListener("resize", fit);
+      window.removeEventListener("scroll", fit, true);
+    };
+  }, [open, results]);
+
   // With up to 20 results the list scrolls; keep the keyboard-highlighted row visible.
   useEffect(() => {
     if (!open || active < 0) return;
