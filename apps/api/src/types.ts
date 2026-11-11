@@ -21,7 +21,7 @@ export interface SourceStatus {
   source: SourceId;
   name: string;
   url: string;
-  status: "ok" | "error" | "skipped";
+  status: "ok" | "partial" | "error" | "skipped";
   fetchedAt: string;
   detail?: string;
 }
