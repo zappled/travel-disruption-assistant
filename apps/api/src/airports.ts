@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Airport } from "./types.js";
+import type { Airport, AirportSuggestion } from "./types.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const AIRPORTS: Airport[] = JSON.parse(
@@ -13,30 +13,30 @@ const byIata = new Map(AIRPORTS.map((a) => [a.iata, a]));
  * Metro areas served by several major airports. A traveller saying "New York"
  * could fly from any of these, and conditions can differ between them.
  */
-const METROS: Record<string, string[]> = {
-  "new york": ["JFK", "LGA", "EWR"],
-  "new york city": ["JFK", "LGA", "EWR"],
-  nyc: ["JFK", "LGA", "EWR"],
-  chicago: ["ORD", "MDW"],
-  "washington": ["DCA", "IAD", "BWI"],
-  "washington dc": ["DCA", "IAD", "BWI"],
-  "washington d.c.": ["DCA", "IAD", "BWI"],
-  dc: ["DCA", "IAD", "BWI"],
-  "san francisco": ["SFO", "OAK", "SJC"],
-  "bay area": ["SFO", "OAK", "SJC"],
-  sf: ["SFO", "OAK", "SJC"],
-  "los angeles": ["LAX", "BUR", "LGB", "SNA"],
-  la: ["LAX", "BUR", "LGB", "SNA"],
-  houston: ["IAH", "HOU"],
-  dallas: ["DFW", "DAL"],
-  "dallas fort worth": ["DFW", "DAL"],
-  miami: ["MIA", "FLL"],
-  boston: ["BOS"],
-  "honolulu": ["HNL"],
-};
+export interface Metro {
+  name: string; // display name, also what gets typed into the field
+  aliases: string[];
+  codes: string[];
+}
+
+export const METRO_GROUPS: Metro[] = [
+  { name: "New York", aliases: ["new york city", "nyc"], codes: ["JFK", "LGA", "EWR"] },
+  { name: "Chicago", aliases: [], codes: ["ORD", "MDW"] },
+  { name: "Washington DC", aliases: ["washington", "washington d c", "dc"], codes: ["DCA", "IAD", "BWI"] },
+  { name: "San Francisco", aliases: ["bay area", "sf"], codes: ["SFO", "OAK", "SJC"] },
+  { name: "Los Angeles", aliases: ["la"], codes: ["LAX", "BUR", "LGB", "SNA"] },
+  { name: "Houston", aliases: [], codes: ["IAH", "HOU"] },
+  { name: "Dallas", aliases: ["dallas fort worth"], codes: ["DFW", "DAL"] },
+  { name: "Miami", aliases: [], codes: ["MIA", "FLL"] },
+];
 
 const norm = (s: string) =>
   s.toLowerCase().replace(/[.,]/g, " ").replace(/\s+/g, " ").trim();
+
+const METROS: Record<string, string[]> = {};
+for (const m of METRO_GROUPS) {
+  for (const key of [m.name, ...m.aliases]) METROS[norm(key)] = m.codes;
+}
 
 const SIZE_RANK = { large: 0, medium: 1, small: 2 } as const;
 
@@ -106,6 +106,52 @@ export function resolveAirports(input: string): Resolution {
   // Same region: keep the biggest airport(s) only — small fields add noise.
   const topSize = matches[0].size;
   return { kind: "resolved", airports: matches.filter((a) => a.size === topSize).slice(0, 3) };
+}
+
+/**
+ * Type-ahead suggestions for the From/To fields. Ranked so the most likely
+ * intent comes first: exact code → metro area → code prefix → city → airport name.
+ */
+export function searchAirports(input: string, limit = 8): AirportSuggestion[] {
+  const q = norm(input);
+  if (!q) return [];
+  const upper = q.toUpperCase();
+  const scored = new Map<string, { s: AirportSuggestion; score: number }>();
+  const add = (s: AirportSuggestion, score: number) => {
+    const prev = scored.get(s.value);
+    if (!prev || score < prev.score) scored.set(s.value, { s, score });
+  };
+
+  for (const m of METRO_GROUPS) {
+    const keys = [m.name, ...m.aliases].map(norm);
+    if (keys.some((k) => k === q)) add(metroSuggestion(m), 1);
+    else if (q.length >= 2 && keys.some((k) => k.startsWith(q))) add(metroSuggestion(m), 2);
+  }
+
+  for (const a of AIRPORTS) {
+    const city = norm(a.city);
+    const name = norm(a.name);
+    const sizeBonus = SIZE_RANK[a.size] / 10; // large airports first within a tier
+    if (a.iata === upper) add(airportSuggestion(a), 0);
+    else if (q.length <= 3 && /^[a-z]+$/.test(q) && a.iata.startsWith(upper)) add(airportSuggestion(a), 3 + sizeBonus);
+    else if (q.length >= 2 && (city.startsWith(q) || city.split(" ").some((w) => w.startsWith(q)))) add(airportSuggestion(a), 4 + sizeBonus);
+    // Word-start only, so "port" doesn't match every "Airport".
+    else if (q.length >= 3 && ` ${name}`.includes(` ${q}`) && !/^airport/.test(q)) add(airportSuggestion(a), 5 + sizeBonus);
+  }
+
+  return [...scored.values()]
+    .sort((x, y) => x.score - y.score || x.s.label.localeCompare(y.s.label))
+    .slice(0, limit)
+    .map((x) => x.s);
+}
+
+function metroSuggestion(m: Metro): AirportSuggestion {
+  return { kind: "metro", value: m.name, label: `${m.name}, all airports`, detail: m.codes.join(" "), codes: m.codes };
+}
+
+function airportSuggestion(a: Airport): AirportSuggestion {
+  const city = a.city.split(",")[0];
+  return { kind: "airport", value: a.iata, label: `${city}, ${a.region}`, detail: a.name, codes: [a.iata] };
 }
 
 export function getAirport(iata: string): Airport | undefined {

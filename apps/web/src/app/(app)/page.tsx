@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AirportInput } from "@/components/AirportInput";
 import { takeDraft, useApp } from "@/components/AppShell";
 import { Results } from "@/components/Results";
 import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute } from "@/lib/api";
@@ -188,14 +189,8 @@ export default function CheckPage() {
         </div>
 
         <div className="planner-grid">
-          <label className="field">
-            From
-            <input className="input" value={trip.origin} onChange={(e) => set({ origin: e.target.value })} placeholder="City or airport code" required />
-          </label>
-          <label className="field">
-            To
-            <input className="input" value={trip.destination} onChange={(e) => set({ destination: e.target.value })} placeholder="City or airport code" required />
-          </label>
+          <AirportInput label="From" value={trip.origin} onChange={(origin) => set({ origin })} />
+          <AirportInput label="To" value={trip.destination} onChange={(destination) => set({ destination })} />
           <label className="field">
             Date
             <input className="input" type="date" value={trip.date} min={localDate()} max={localDate(MAX_DAYS)} onChange={(e) => set({ date: e.target.value })} required />

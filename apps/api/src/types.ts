@@ -104,6 +104,15 @@ export interface AssessResponse {
   generatedAt: string;
 }
 
+export interface AirportSuggestion {
+  kind: "metro" | "airport";
+  /** What gets put in the field: a metro name ("New York") or an IATA code ("PDX"). */
+  value: string;
+  label: string; // "Portland, OR" or "New York, all airports"
+  detail: string; // airport name, or the metro's codes
+  codes: string[];
+}
+
 export interface AirportChoice {
   query: string;
   candidates: Airport[];

@@ -4,6 +4,7 @@ import express from "express";
 import { z } from "zod";
 import { parseTripText } from "./ai/parse.js";
 import { getClient } from "./ai/client.js";
+import { searchAirports } from "./airports.js";
 import { AssessError, assessRequestSchema, runAssessment } from "./assessment.js";
 import { authRouter, requireAuth } from "./auth.js";
 import { historyRouter, recordHistory } from "./history.js";
@@ -29,6 +30,12 @@ export function createApp(store: Store = new MemoryStore()) {
   app.use("/auth", authRouter(store));
   app.use("/routes", savedRoutesRouter(store));
   app.use("/history", historyRouter(store));
+
+  // Type-ahead for the From/To fields (local dataset, no external calls).
+  app.get("/airports/search", requireAuth(store), (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q.slice(0, 80) : "";
+    res.json({ suggestions: searchAirports(q) });
+  });
 
   // Free text → structured trip fields (user confirms them before assessing).
   app.post("/parse", requireAuth(store), async (req, res) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AirportInput } from "@/components/AirportInput";
 import { useApp } from "@/components/AppShell";
 import { api, ApiError, type SavedRoute } from "@/lib/api";
 
@@ -44,14 +45,8 @@ function RouteForm({
           Name
           <input className="input" value={f.label} maxLength={60} onChange={(e) => set({ label: e.target.value })} placeholder="e.g. HQ to SF office" required />
         </label>
-        <label className="field">
-          From
-          <input className="input" value={f.origin} onChange={(e) => set({ origin: e.target.value })} placeholder="City or airport code" required />
-        </label>
-        <label className="field">
-          To
-          <input className="input" value={f.destination} onChange={(e) => set({ destination: e.target.value })} placeholder="City or airport code" required />
-        </label>
+        <AirportInput label="From" value={f.origin} onChange={(origin) => set({ origin })} />
+        <AirportInput label="To" value={f.destination} onChange={(destination) => set({ destination })} />
         <label className="field span-2">
           Trip description (optional)
           <textarea className="textarea" value={f.prompt ?? ""} maxLength={500} onChange={(e) => set({ prompt: e.target.value })} placeholder="e.g. Usually the Monday 7am flight out of JFK" />

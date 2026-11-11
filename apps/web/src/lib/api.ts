@@ -1,4 +1,5 @@
 import type {
+  AirportSuggestion,
   AmbiguousResponse,
   AssessResponse,
   HistoryEntry,
@@ -8,7 +9,7 @@ import type {
   User,
 } from "@tda/api/types";
 
-export type { AmbiguousResponse, AssessResponse, HistoryEntry, HistorySummary, ParsedTrip, SavedRoute, User };
+export type { AirportSuggestion, AmbiguousResponse, AssessResponse, HistoryEntry, HistorySummary, ParsedTrip, SavedRoute, User };
 
 export class ApiError extends Error {
   constructor(
@@ -44,6 +45,9 @@ export const api = {
   updateRoute: (id: string, r: Omit<SavedRoute, "id" | "createdAt">) =>
     call<{ route: SavedRoute }>(`/routes/${id}`, { method: "PUT", body: JSON.stringify(r) }),
   deleteRoute: (id: string) => call<void>(`/routes/${id}`, { method: "DELETE" }),
+
+  searchAirports: (q: string) =>
+    call<{ suggestions: AirportSuggestion[] }>(`/airports/search?q=${encodeURIComponent(q)}`),
 
   listHistory: () => call<{ entries: HistorySummary[]; max: number }>("/history"),
   getHistory: (id: string) => call<{ entry: HistoryEntry }>(`/history/${id}`),

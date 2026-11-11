@@ -73,6 +73,7 @@ free text ──(Claude: parse)──▶ form fields (user confirms)
 | POST | `/auth/login`, `/auth/logout` · GET `/auth/me` | Email + password (scrypt), session cookie, login rate limiting. No sign-up endpoint |
 | GET/POST | `/routes` · PUT/DELETE `/routes/:id` | Saved routes, max 5 per user |
 | GET | `/history` · GET/DELETE `/history/:id` | Past results: the last 20 assessments per user, stored as full snapshots with the original request |
+| GET | `/airports/search?q=` | Suggestions for the From/To fields: exact code, multi-airport city, code prefix, city, airport name |
 | POST | `/parse` | `{ text }` → `{ origin, destination, date, timeOfDay, notes }` |
 | POST | `/assess` | `{ origin, destination, date, timeOfDay?, notes? }` → assessment, signals, sources, notices. 409 with `choices` for ambiguous cities |
 

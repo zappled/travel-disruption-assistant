@@ -816,6 +816,62 @@ h3 {
   align-items: center;
 }
 
+/* ------------------------------------------------------------------ airport combobox */
+.combo {
+  position: relative;
+}
+.combo-list {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent);
+  max-height: 320px;
+  overflow-y: auto;
+  font-weight: 400;
+}
+.combo-list li {
+  display: grid;
+  grid-template-columns: minmax(3.2em, auto) 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.combo-list li.active {
+  background: color-mix(in srgb, var(--chart) 12%, transparent);
+}
+.combo-code {
+  font-family: var(--font-signage);
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.combo-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.combo-label {
+  font-weight: 700;
+}
+.combo-detail {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ------------------------------------------------------------------ auth */
 .auth {
   max-width: 380px;
