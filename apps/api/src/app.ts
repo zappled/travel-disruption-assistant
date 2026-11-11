@@ -7,7 +7,7 @@ import { getProviderState } from "./ai/client.js";
 import { searchAirports } from "./airports.js";
 import { AssessError, assessRequestSchema, runAssessment } from "./assessment.js";
 import { authRouter, requireAuth } from "./auth.js";
-import { historyRouter, recordHistory } from "./history.js";
+import { historyRouter, holdResult } from "./history.js";
 import { savedRoutesRouter } from "./savedRoutes.js";
 import { MemoryStore, type Store } from "./store.js";
 
@@ -71,7 +71,8 @@ export function createApp(store: Store = new MemoryStore()) {
     }
     try {
       const result = await runAssessment(store, parsed.data);
-      const entry = recordHistory(
+      // Not saved to Past results unless the user clicks "Save result" (POST /history).
+      const resultId = holdResult(
         store,
         req.user!.id,
         {
@@ -83,7 +84,7 @@ export function createApp(store: Store = new MemoryStore()) {
         },
         result,
       );
-      res.json({ ...result, historyId: entry.id });
+      res.json({ ...result, resultId });
     } catch (err) {
       if (err instanceof AssessError) {
         res.status(err.status).json(err.body);

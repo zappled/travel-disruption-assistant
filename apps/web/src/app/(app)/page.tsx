@@ -60,7 +60,8 @@ export default function CheckPage() {
   const [parseNote, setParseNote] = useState<string | null>(null);
   const [assessing, setAssessing] = useState(false);
   const [step, setStep] = useState(0);
-  const [result, setResult] = useState<(AssessResponse & { historyId: string }) | null>(null);
+  const [result, setResult] = useState<(AssessResponse & { resultId: string }) | null>(null);
+  const [resultSave, setResultSave] = useState<"idle" | "saving" | "saved">("idle");
   const [ambiguous, setAmbiguous] = useState<AmbiguousResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState<{ origin: string; destination: string; prompt: string | null } | null>(null);
@@ -105,6 +106,7 @@ export default function CheckPage() {
     setError(null);
     setAmbiguous(null);
     setResult(null);
+    setResultSave("idle");
     setSaveError(null);
     try {
       const res = await api.assess({
@@ -159,6 +161,20 @@ export default function CheckPage() {
     }
   }
 
+  /** Add this result to Past results (only results saved this way are kept). */
+  async function saveResult() {
+    if (!result) return;
+    setSaveError(null);
+    setResultSave("saving");
+    try {
+      await api.saveResult(result.resultId);
+      setResultSave("saved");
+    } catch (err) {
+      setResultSave("idle");
+      if (!handleAuthError(err, trip)) setSaveError(err instanceof ApiError ? err.message : "Couldn't save this result.");
+    }
+  }
+
   const canAssess = trip.origin.trim() && trip.destination.trim() && trip.date && !assessing;
   const routeFull = routes.length >= maxRoutes;
   const alreadySaved =
@@ -167,17 +183,23 @@ export default function CheckPage() {
       (r) => r.origin.toLowerCase() === checked.origin.toLowerCase() && r.destination.toLowerCase() === checked.destination.toLowerCase(),
     );
 
-  // Shown in the results toolbar, beside "Save as PDF".
-  const saveRouteAction =
-    routeFull && !alreadySaved ? (
-      <span className="small muted">
-        {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to save this one.
-      </span>
-    ) : (
-      <button type="button" className="btn btn-secondary" disabled={alreadySaved || saving} onClick={saveRoute}>
-        {alreadySaved ? "Route saved" : saving ? "Saving…" : "Save route"}
+  // Shown in the results toolbar, before "Save as PDF".
+  const resultActions = (
+    <>
+      <button type="button" className="btn btn-secondary" disabled={resultSave !== "idle"} onClick={saveResult}>
+        {resultSave === "saved" ? "Result saved" : resultSave === "saving" ? "Saving…" : "Save result"}
       </button>
-    );
+      {routeFull && !alreadySaved ? (
+        <span className="small muted">
+          {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to save this one.
+        </span>
+      ) : (
+        <button type="button" className="btn btn-secondary" disabled={alreadySaved || saving} onClick={saveRoute}>
+          {alreadySaved ? "Route saved" : saving ? "Saving…" : "Save route"}
+        </button>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -307,10 +329,7 @@ export default function CheckPage() {
 
       {result && (
         <>
-          <Results data={result} actions={saveRouteAction} actionError={saveError} />
-          <p className="small muted no-print">
-            Saved to <Link href={`/history/${result.historyId}`}>Past results</Link>.
-          </p>
+          <Results data={result} actions={resultActions} actionError={saveError} />
         </>
       )}
 

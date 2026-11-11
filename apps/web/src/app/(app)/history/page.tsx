@@ -36,13 +36,15 @@ export default function PastResultsPage() {
   return (
     <>
       <h1 className="page-title">Past results</h1>
-      <p className="muted">Your last {max} checks, newest first. Each one is a snapshot of the data at the time you ran it.</p>
+      <p className="muted">
+        Results you&apos;ve saved, newest first (up to {max}). Each one is a snapshot of the data at the time you ran it.
+      </p>
       {error && <p className="error-text">{error}</p>}
 
       {entries && entries.length === 0 && (
         <div className="empty">
           <p>
-            No checks yet. <Link href="/">Check a trip</Link> and the result will appear here.
+            No saved results yet. <Link href="/">Check a trip</Link> and choose Save result to keep it here.
           </p>
         </div>
       )}

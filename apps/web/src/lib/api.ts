@@ -55,7 +55,8 @@ export const api = {
 
   parse: (text: string, today: string) => post<{ trip: ParsedTrip }>("/parse", { text, today }),
   assess: (req: { origin: string; destination: string; date: string; timeOfDay?: string | null; notes?: string | null }) =>
-    post<AssessResponse & { historyId: string }>("/assess", req),
+    post<AssessResponse & { resultId: string }>("/assess", req),
+  saveResult: (resultId: string) => post<{ entry: HistorySummary }>("/history", { resultId }),
 };
 
 /** Local calendar date as YYYY-MM-DD (not UTC). */

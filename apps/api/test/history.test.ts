@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recordHistory } from "../src/history.js";
+import { holdResult, recordHistory } from "../src/history.js";
 import { createUser } from "../src/auth.js";
 import { createApp } from "../src/app.js";
 import { MemoryStore } from "../src/store.js";
@@ -41,6 +41,25 @@ describe("history", () => {
     const full = await a.get(`/history/${list.body.entries[0].id}`);
     expect(full.body.entry.result.assessment.headline).toBe(`Result ${MAX_HISTORY + 3}`);
     expect(full.body.entry.request).toEqual(req);
+  });
+
+  it("saves a held result only when asked, idempotently, and per user", async () => {
+    const { store, app, u1 } = await setup();
+    const resultId = holdResult(store, u1.id, req, fakeResult(7));
+    const a = await loggedInAgent(app, "a@example.com");
+    expect((await a.get("/history")).body.entries).toHaveLength(0); // not saved yet
+
+    const first = await a.post("/history").send({ resultId });
+    expect(first.status).toBe(201);
+    expect(first.body.entry).toMatchObject({ id: resultId, headline: "Result 7" });
+    const again = await a.post("/history").send({ resultId });
+    expect(again.status).toBe(200);
+    expect((await a.get("/history")).body.entries).toHaveLength(1);
+
+    const b = await loggedInAgent(app, "b@example.com");
+    expect((await b.post("/history").send({ resultId })).status).toBe(404);
+    expect((await a.post("/history").send({ resultId: "00000000-0000-4000-8000-000000000000" })).body.error).toBe("expired");
+    expect((await a.post("/history").send({})).status).toBe(400);
   });
 
   it("deletes entries and isolates users", async () => {
