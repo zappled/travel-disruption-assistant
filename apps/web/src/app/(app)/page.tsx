@@ -203,7 +203,7 @@ export default function CheckPage() {
               maxLength={500}
             />
             <button type="button" className="btn btn-secondary" onClick={fillFromPrompt} disabled={parsing || !trip.prompt.trim()}>
-              {parsing ? "Reading…" : "Fill in details"}
+              {parsing ? "Filling…" : "Fill form"}
             </button>
           </div>
           {parseNote && <span className="small muted">{parseNote}</span>}
