@@ -26,7 +26,7 @@ function shortName(name: string) {
 function showFullNameIfTruncated(row: HTMLElement, s: AirportSuggestion) {
   const text = row.querySelector<HTMLElement>(".combo-text");
   const truncated = !!text && text.scrollWidth > text.clientWidth;
-  const full = s.kind === "metro" ? `${s.label} (${s.codes.join(", ")})` : `${s.value}: ${s.label}, ${s.detail}`;
+  const full = s.kind === "metro" ? `${s.label} (${s.codes.join(", ")})` : `${s.value}: ${s.label} (${s.detail})`;
   if (truncated) row.title = full;
   else row.removeAttribute("title");
 }
