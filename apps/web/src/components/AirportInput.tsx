@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import type MarkJs from "mark.js";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { api, type AirportSuggestion } from "@/lib/api";
 
 // Shared across inputs: identical queries are only fetched once per page load.
@@ -8,9 +9,19 @@ const cache = new Map<string, AirportSuggestion[]>();
 
 const MAX_SHOWN = 6;
 
+// mark.js touches the DOM, so load it in the browser only, once.
+let markModule: Promise<{ default: typeof MarkJs }> | null = null;
+const loadMark = () => (markModule ??= import("mark.js"));
+
 /** "John F. Kennedy International Airport" → "John F. Kennedy Intl" */
 function shortName(name: string) {
   return name.replace(/\s+Airport$/i, "").replace(/\bInternational\b/g, "Intl").replace(/\bRegional\b/g, "Rgnl");
+}
+
+interface Results {
+  term: string; // the search term these suggestions were fetched for
+  list: AirportSuggestion[];
+  seq: number; // bumps on every new result set; used as the list's React key
 }
 
 /**
@@ -32,10 +43,12 @@ export function AirportInput({
 }) {
   const id = useId();
   const listId = `${id}-list`;
+  const listRef = useRef<HTMLUListElement>(null);
   const [query, setQuery] = useState<string | null>(null); // null = not typing
-  const [suggestions, setSuggestions] = useState<AirportSuggestion[]>([]);
+  const [results, setResults] = useState<Results>({ term: "", list: [], seq: 0 });
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const suggestions = results.list;
 
   // Debounced lookup while the user is typing.
   useEffect(() => {
@@ -49,7 +62,7 @@ export function AirportInput({
         const list = hit ?? (await api.searchAirports(q)).suggestions.slice(0, MAX_SHOWN);
         if (!hit) cache.set(q.toLowerCase(), list);
         if (cancelled) return;
-        setSuggestions(list);
+        setResults((r) => ({ term: q, list, seq: r.seq + 1 }));
         setActive(list.length ? 0 : -1);
         setOpen(list.length > 0);
       } catch {
@@ -61,6 +74,30 @@ export function AirportInput({
       clearTimeout(timer);
     };
   }, [query]);
+
+  // Highlight the search term in codes, cities and airport names. The list is
+  // keyed by `results.seq`, so React rebuilds it for each new result set and
+  // never has to reconcile text that mark.js has split into <mark> elements.
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (!open || !el || !results.term) return;
+    let cancelled = false;
+    loadMark().then(({ default: Mark }) => {
+      if (cancelled || !el.isConnected) return;
+      const marker = new Mark(el);
+      marker.unmark({
+        done: () =>
+          marker.mark(results.term, {
+            className: "combo-hit",
+            separateWordSearch: false, // "new y" highlights "New Y", not every "y"
+            diacritics: true,
+          }),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, results]);
 
   function choose(s: AirportSuggestion) {
     onChange(s.value);
@@ -115,7 +152,7 @@ export function AirportInput({
           setQuery(e.target.value);
           if (e.target.value.trim().length === 0) {
             setOpen(false);
-            setSuggestions([]);
+            setResults((r) => ({ term: "", list: [], seq: r.seq + 1 }));
           }
         }}
         onKeyDown={onKeyDown}
@@ -123,24 +160,24 @@ export function AirportInput({
         onBlur={() => setOpen(false)}
       />
       {open && (
-        <ul id={listId} role="listbox" className="combo-list" aria-label={`${label} suggestions`}>
+        <ul key={results.seq} ref={listRef} id={listId} role="listbox" className="combo-list" aria-label={`${label} suggestions`}>
           {suggestions.map((s, i) => (
             <li
               key={s.value}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={i === active}
-              className={i === active ? "active" : undefined}
+              className={`${s.kind === "metro" ? "metro" : ""}${i === active ? " active" : ""}`.trim() || undefined}
               // mousedown keeps focus in the input; click picks the option
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => choose(s)}
               onMouseEnter={() => setActive(i)}
             >
+              <span className="combo-code">{s.kind === "metro" ? s.codes.join(" ") : s.value}</span>
               <span className="combo-text">
                 <span className="combo-label">{s.label}</span>
                 {s.kind === "airport" && <span className="combo-detail">{shortName(s.detail)}</span>}
               </span>
-              <span className="combo-code">{s.kind === "metro" ? s.codes.join(" ") : s.value}</span>
             </li>
           ))}
         </ul>

@@ -837,11 +837,10 @@ h3 {
   overflow-y: auto;
   font-weight: 400;
 }
-/* One line per suggestion: place (+ muted airport name) left, code right. */
+/* One line per suggestion: code left, then place and muted airport name. */
 .combo-list li {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: 12px;
   padding: 8px 10px;
   border-radius: 3px;
@@ -867,14 +866,19 @@ h3 {
 }
 .combo-code {
   flex-shrink: 0;
+  min-width: 3.2em; /* aligns single codes into a column */
   font-family: var(--font-signage);
   font-weight: 600;
   font-size: 1.05rem;
   letter-spacing: 0.03em;
-  color: var(--ink-soft);
-}
-.combo-list li.active .combo-code {
   color: var(--ink);
+}
+/* Matched text, highlighted by mark.js */
+.combo-list mark.combo-hit {
+  background: color-mix(in srgb, var(--risk-moderate) 30%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 /* ------------------------------------------------------------------ auth */
