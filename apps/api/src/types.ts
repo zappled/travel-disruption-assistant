@@ -170,9 +170,9 @@ export interface User {
 
 export interface SavedRoute {
   id: string;
-  label: string;
   origin: string;
   destination: string;
+  /** Optional description (the free-text trip description) */
   prompt: string | null;
   createdAt: string;
 }

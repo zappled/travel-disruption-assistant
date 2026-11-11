@@ -43,7 +43,7 @@ export default function CheckPage() {
   const [result, setResult] = useState<(AssessResponse & { historyId: string }) | null>(null);
   const [ambiguous, setAmbiguous] = useState<AmbiguousResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saveLabel, setSaveLabel] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const set = (patch: Partial<Trip>) => setTrip((t) => ({ ...t, ...patch }));
@@ -84,7 +84,6 @@ export default function CheckPage() {
     setError(null);
     setAmbiguous(null);
     setResult(null);
-    setSaveLabel(null);
     try {
       setResult(
         await api.assess({
@@ -121,20 +120,21 @@ export default function CheckPage() {
     setError(null);
   }
 
+  /** One click: the route path, plus the trip description if there is one. */
   async function saveRoute() {
-    if (!saveLabel?.trim()) return;
     setSaveError(null);
+    setSaving(true);
     try {
       const { route } = await api.saveRoute({
-        label: saveLabel.trim(),
         origin: trip.origin.trim(),
         destination: trip.destination.trim(),
         prompt: trip.prompt.trim() || null,
       });
       setRoutes((rs) => [...rs, route]);
-      setSaveLabel(null);
     } catch (err) {
       if (!handleAuthError(err, trip)) setSaveError(err instanceof ApiError ? err.message : "Couldn't save this route.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -153,7 +153,6 @@ export default function CheckPage() {
           {routes.map((r) => (
             <span className="saved-chip" key={r.id}>
               <button onClick={() => applyRoute(r)} title={r.prompt ?? undefined}>
-                {r.label}
                 <span className="codes">
                   {r.origin} → {r.destination}
                 </span>
@@ -229,34 +228,19 @@ export default function CheckPage() {
           <button className="btn btn-primary" type="submit" disabled={!canAssess}>
             {assessing ? "Checking…" : "Check this trip"}
           </button>
-          {saveLabel === null ? (
-            routeFull && !alreadySaved ? (
-              <span className="small muted">
-                {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to make room.
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="btn-link"
-                disabled={!trip.origin.trim() || !trip.destination.trim() || alreadySaved}
-                onClick={() => {
-                  setSaveError(null);
-                  setSaveLabel(`${trip.origin.trim()} to ${trip.destination.trim()}`.slice(0, 60));
-                }}
-              >
-                {alreadySaved ? "Route saved" : "Save route"}
-              </button>
-            )
-          ) : (
-            <span className="inline-save">
-              <input className="input" aria-label="Route name" value={saveLabel} maxLength={60} onChange={(e) => setSaveLabel(e.target.value)} autoFocus />
-              <button type="button" className="btn btn-secondary" onClick={saveRoute}>
-                Save
-              </button>
-              <button type="button" className="btn-link" onClick={() => setSaveLabel(null)}>
-                Cancel
-              </button>
+          {routeFull && !alreadySaved ? (
+            <span className="small muted">
+              {maxRoutes} routes saved. <Link href="/routes">Manage saved routes</Link> to make room.
             </span>
+          ) : (
+            <button
+              type="button"
+              className="btn-link"
+              disabled={!trip.origin.trim() || !trip.destination.trim() || alreadySaved || saving}
+              onClick={saveRoute}
+            >
+              {alreadySaved ? "Route saved" : saving ? "Saving…" : "Save route"}
+            </button>
           )}
         </div>
         {saveError && <p className="error-text">{saveError}</p>}

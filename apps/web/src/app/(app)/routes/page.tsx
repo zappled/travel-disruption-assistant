@@ -6,7 +6,7 @@ import { useApp } from "@/components/AppShell";
 import { api, ApiError, type SavedRoute } from "@/lib/api";
 
 type RouteFields = Omit<SavedRoute, "id" | "createdAt">;
-const EMPTY: RouteFields = { label: "", origin: "", destination: "", prompt: null };
+const EMPTY: RouteFields = { origin: "", destination: "", prompt: null };
 
 function RouteForm({
   initial,
@@ -41,20 +41,16 @@ function RouteForm({
       }}
     >
       <div className="planner-grid">
-        <label className="field span-2">
-          Name
-          <input className="input" value={f.label} maxLength={60} onChange={(e) => set({ label: e.target.value })} placeholder="e.g. HQ to SF office" required />
-        </label>
         <AirportInput label="From" value={f.origin} onChange={(origin) => set({ origin })} />
         <AirportInput label="To" value={f.destination} onChange={(destination) => set({ destination })} />
         <label className="field span-2">
-          Trip description (optional)
+          Description (optional)
           <textarea className="textarea" value={f.prompt ?? ""} maxLength={500} onChange={(e) => set({ prompt: e.target.value })} placeholder="e.g. Usually the Monday 7am flight out of JFK" />
         </label>
       </div>
       {error && <p className="error-text">{error}</p>}
       <div className="planner-actions">
-        <button className="btn btn-primary" type="submit" disabled={busy || !f.label.trim() || !f.origin.trim() || !f.destination.trim()}>
+        <button className="btn btn-primary" type="submit" disabled={busy || !f.origin.trim() || !f.destination.trim()}>
           {busy ? "Saving…" : submitLabel}
         </button>
         {onCancel && (
@@ -114,7 +110,7 @@ export default function SavedRoutesPage() {
           editing === r.id ? (
             <li key={r.id} className="list-item">
               <RouteForm
-                initial={{ label: r.label, origin: r.origin, destination: r.destination, prompt: r.prompt }}
+                initial={{ origin: r.origin, destination: r.destination, prompt: r.prompt }}
                 submitLabel="Save changes"
                 onCancel={() => setEditing(null)}
                 onSubmit={(fields) =>
@@ -129,11 +125,10 @@ export default function SavedRoutesPage() {
           ) : (
             <li key={r.id} className="list-item">
               <div className="list-main">
-                <h2 className="list-title">{r.label}</h2>
-                <div className="list-codes">
+                <h2 className="list-codes">
                   {r.origin} → {r.destination}
-                </div>
-                {r.prompt && <p className="list-note">&ldquo;{r.prompt}&rdquo;</p>}
+                </h2>
+                {r.prompt && <p className="list-note">{r.prompt}</p>}
               </div>
               <div className="list-actions">
                 <button className="btn btn-primary" onClick={() => openInChecker({ origin: r.origin, destination: r.destination, prompt: r.prompt ?? "" })}>
@@ -142,7 +137,7 @@ export default function SavedRoutesPage() {
                 <button className="btn-link" onClick={() => setEditing(r.id)}>
                   Edit
                 </button>
-                <button className="btn-link btn-danger" onClick={() => remove(r)} aria-label={`Remove ${r.label}`}>
+                <button className="btn-link btn-danger" onClick={() => remove(r)} aria-label={`Remove ${r.origin} to ${r.destination}`}>
                   Remove
                 </button>
               </div>

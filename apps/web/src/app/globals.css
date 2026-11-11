@@ -461,17 +461,14 @@ select.input {
   border: none;
   color: var(--ink);
   cursor: pointer;
-  padding: 6px 4px 6px 14px;
+  padding: 5px 14px;
 }
-.saved-chip button.saved-remove {
-  padding: 6px 12px 6px 8px;
-  color: var(--ink-soft);
-}
+/* Chips show just the route path, in the signage face */
 .saved-chip .codes {
   font-family: var(--font-signage);
   font-weight: 600;
-  margin-left: 6px;
-  color: var(--ink-soft);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
 }
 
 /* ------------------------------------------------------------------ route strip (the hero) */
@@ -907,15 +904,6 @@ select.input {
 }
 .btn-danger {
   color: var(--risk-severe);
-}
-.inline-save {
-  display: inline-flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.inline-save .input {
-  width: 220px;
 }
 .empty {
   margin-top: 20px;

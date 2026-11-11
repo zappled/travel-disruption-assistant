@@ -5,14 +5,16 @@ import { requireAuth } from "./auth.js";
 import type { Store } from "./store.js";
 import { MAX_SAVED_ROUTES, type SavedRoute } from "./types.js";
 
+// A saved route is its path plus an optional description (no separate name).
 const routeInputSchema = z.object({
-  label: z.string().trim().min(1, "Label is required").max(60),
   origin: z.string().trim().min(1, "Origin is required").max(80),
   destination: z.string().trim().min(1, "Destination is required").max(80),
   prompt: z.string().trim().max(500).nullish().transform((v) => v || null),
 });
 
 const routesKey = (userId: string) => `routes:${userId}`;
+const samePath = (a: { origin: string; destination: string }, b: { origin: string; destination: string }) =>
+  a.origin.toLowerCase() === b.origin.toLowerCase() && a.destination.toLowerCase() === b.destination.toLowerCase();
 
 export function savedRoutesRouter(store: Store) {
   const router = Router();
@@ -20,6 +22,7 @@ export function savedRoutesRouter(store: Store) {
 
   const list = (userId: string) => store.get<SavedRoute[]>(routesKey(userId)) ?? [];
   const save = (userId: string, routes: SavedRoute[]) => store.set(routesKey(userId), routes);
+  const duplicate = { error: "duplicate", message: "You've already saved this route." };
 
   router.get("/", (req, res) => {
     res.json({ routes: list(req.user!.id), max: MAX_SAVED_ROUTES });
@@ -32,10 +35,14 @@ export function savedRoutesRouter(store: Store) {
       return;
     }
     const routes = list(req.user!.id);
+    if (routes.some((r) => samePath(r, parsed.data))) {
+      res.status(409).json(duplicate);
+      return;
+    }
     if (routes.length >= MAX_SAVED_ROUTES) {
       res.status(409).json({
         error: "limit_reached",
-        message: `You can save up to ${MAX_SAVED_ROUTES} routes. Delete or replace one first.`,
+        message: `You can save up to ${MAX_SAVED_ROUTES} routes. Remove one first.`,
       });
       return;
     }
@@ -54,6 +61,10 @@ export function savedRoutesRouter(store: Store) {
     const idx = routes.findIndex((r) => r.id === req.params.id);
     if (idx === -1) {
       res.status(404).json({ error: "not_found", message: "Route not found." });
+      return;
+    }
+    if (routes.some((r, i) => i !== idx && samePath(r, parsed.data))) {
+      res.status(409).json(duplicate);
       return;
     }
     const updated: SavedRoute = { ...routes[idx], ...parsed.data };

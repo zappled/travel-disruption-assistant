@@ -77,7 +77,8 @@ describe("auth", () => {
 });
 
 describe("saved routes", () => {
-  const route = (n: number) => ({ label: `Trip ${n}`, origin: "JFK", destination: "SFO", prompt: "NYC to SF evening" });
+  const DESTS = ["SFO", "LAX", "ORD", "DEN", "SEA", "BOS", "MIA"];
+  const route = (n: number) => ({ origin: "JFK", destination: DESTS[n - 1], prompt: `Trip ${n}` });
 
   it("enforces the 5-route limit and supports update/delete", async () => {
     const a = await loggedInAgent(await appWithUsers("f@example.com"), "f@example.com");
@@ -89,12 +90,26 @@ describe("saved routes", () => {
     }
     expect((await a.post("/routes").send(route(6))).status).toBe(409);
 
-    const upd = await a.put(`/routes/${ids[0]}`).send({ ...route(1), label: "Renamed" });
-    expect(upd.body.route.label).toBe("Renamed");
+    const upd = await a.put(`/routes/${ids[0]}`).send({ ...route(1), prompt: "Monday 7am flight" });
+    expect(upd.body.route.prompt).toBe("Monday 7am flight");
+    expect(upd.body.route.label).toBeUndefined();
 
     expect((await a.delete(`/routes/${ids[1]}`)).status).toBe(204);
     expect((await a.get("/routes")).body.routes).toHaveLength(4);
     expect((await a.post("/routes").send(route(7))).status).toBe(201);
+  });
+
+  it("rejects saving the same path twice and allows an empty description", async () => {
+    const a = await loggedInAgent(await appWithUsers("dup@example.com"), "dup@example.com");
+    const first = await a.post("/routes").send({ origin: "JFK", destination: "SFO" });
+    expect(first.status).toBe(201);
+    expect(first.body.route.prompt).toBeNull();
+    const again = await a.post("/routes").send({ origin: "jfk", destination: "sfo", prompt: "different text" });
+    expect(again.status).toBe(409);
+    expect(again.body.error).toBe("duplicate");
+    const other = await a.post("/routes").send({ origin: "JFK", destination: "LAX" });
+    const clash = await a.put(`/routes/${other.body.route.id}`).send({ origin: "JFK", destination: "SFO" });
+    expect(clash.status).toBe(409);
   });
 
   it("isolates routes between users", async () => {
