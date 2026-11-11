@@ -1,0 +1,22 @@
+{
+  "name": "travel-disruption-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @tda/api\" \"npm run dev -w @tda/web\"",
+    "dev:api": "npm run dev -w @tda/api",
+    "dev:web": "npm run dev -w @tda/web",
+    "build": "npm run build -w @tda/api && npm run build -w @tda/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
