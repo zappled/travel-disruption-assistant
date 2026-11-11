@@ -209,7 +209,7 @@ function RiskScale({ current }: { current: RiskLevel }) {
             <div key={r.level} className="risk-explainer-row" data-level={r.level} data-current={r.level === current || undefined}>
               <dt>
                 {r.label}
-                {r.level === current && <span className="risk-explainer-you"> (this trip)</span>}
+                {r.level === current && <span className="risk-explainer-you">(this trip)</span>}
               </dt>
               <dd>
                 <p>{r.meaning}</p>

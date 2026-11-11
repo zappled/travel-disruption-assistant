@@ -639,6 +639,7 @@ select.input {
   color: var(--c);
 }
 .risk-explainer-you {
+  display: block; /* sits on its own line under the level name */
   font-family: var(--font-body);
   font-weight: 400;
   font-size: 0.8rem;
