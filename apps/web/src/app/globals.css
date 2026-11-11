@@ -440,7 +440,7 @@ select.input {
 .planner-describe-row {
   display: flex;
   gap: 8px;
-  align-items: flex-start;
+  align-items: center; /* button sits vertically centred beside the text box */
   margin-top: 10px;
 }
 /* Keep "Fill form" on one line; the text box takes the remaining width */
