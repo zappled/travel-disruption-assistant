@@ -6,9 +6,12 @@ Enter a US flight route and date. Trip Check pulls live data from several public
 
 ```bash
 npm install
-cp apps/api/.env.example apps/api/.env   # add ANTHROPIC_API_KEY; set DEMO_EMAIL / DEMO_PASSWORD
+cp apps/api/.env.example apps/api/.env   # set DEMO_EMAIL / DEMO_PASSWORD
+ant auth login                           # Claude credentials via the Anthropic CLI (or set ANTHROPIC_API_KEY in .env)
 npm run dev                              # API on :4000, web on :3000
 ```
+
+The API looks for Claude credentials in this order: `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, then an `ant auth login` profile (`~/.config/anthropic`). It logs which one it uses at startup, and `GET /health` reports it as `aiAuth`.
 
 Open http://localhost:3000 and log in with the demo account from `apps/api/.env`. There is no sign-up flow: in a real deployment, users would sign in with their existing work account.
 Without `ANTHROPIC_API_KEY` the app still works: it falls back to a rules-only assessment.

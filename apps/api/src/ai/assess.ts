@@ -91,8 +91,8 @@ function buildPrompt(ctx: AssessContext): string {
 }
 
 export async function assessWithAi(ctx: AssessContext): Promise<Omit<Assessment, "generatedBy">> {
-  const client = getClient();
-  if (!client) throw new Error("AI is not configured (set ANTHROPIC_API_KEY)");
+  const client = await getClient();
+  if (!client) throw new Error("AI is not configured (set ANTHROPIC_API_KEY or run `ant auth login`)");
 
   const response = await client.beta.messages.parse({
     model: MODEL,

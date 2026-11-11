@@ -3,7 +3,7 @@ import cors from "cors";
 import express from "express";
 import { z } from "zod";
 import { parseTripText } from "./ai/parse.js";
-import { getClient } from "./ai/client.js";
+import { getClientState } from "./ai/client.js";
 import { searchAirports } from "./airports.js";
 import { AssessError, assessRequestSchema, runAssessment } from "./assessment.js";
 import { authRouter, requireAuth } from "./auth.js";
@@ -23,8 +23,9 @@ export function createApp(store: Store = new MemoryStore()) {
   app.use(express.json({ limit: "50kb" }));
   app.use(cookieParser());
 
-  app.get("/health", (_req, res) => {
-    res.json({ status: "ok", ai: getClient() ? "configured" : "not_configured", time: new Date().toISOString() });
+  app.get("/health", async (_req, res) => {
+    const { auth } = await getClientState();
+    res.json({ status: "ok", ai: auth === "none" ? "not_configured" : "configured", aiAuth: auth, time: new Date().toISOString() });
   });
 
   app.use("/auth", authRouter(store));

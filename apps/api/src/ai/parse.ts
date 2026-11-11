@@ -20,8 +20,8 @@ Resolve relative dates ("tomorrow", "next Friday", "Thanksgiving") against the p
 Keep city names as the user wrote them (expand obvious abbreviations: "NYC" → "New York", "SF" → "San Francisco"); keep airport codes as codes.`;
 
 export async function parseTripText(text: string, today: string): Promise<ParsedTrip> {
-  const client = getClient();
-  if (!client) throw new Error("AI is not configured (set ANTHROPIC_API_KEY)");
+  const client = await getClient();
+  if (!client) throw new Error("AI is not configured (set ANTHROPIC_API_KEY or run `ant auth login`)");
 
   const weekday = new Date(`${today}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
   const response = await client.beta.messages.parse({
