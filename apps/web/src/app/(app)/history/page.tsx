@@ -44,7 +44,7 @@ export default function PastResultsPage() {
       {entries && entries.length === 0 && (
         <div className="empty">
           <p>
-            No saved results yet. <Link href="/">Check a trip</Link> and choose Save result to keep it here.
+            No saved results yet. <Link href="/">Check a trip</Link> and choose Save result to view it here.
           </p>
         </div>
       )}
