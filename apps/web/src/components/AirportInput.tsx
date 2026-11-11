@@ -7,8 +7,6 @@ import { api, type AirportSuggestion } from "@/lib/api";
 // Shared across inputs: identical queries are only fetched once per page load.
 const cache = new Map<string, AirportSuggestion[]>();
 
-const MAX_SHOWN = 6;
-
 // mark.js touches the DOM, so load it in the browser only, once.
 let markModule: Promise<{ default: typeof MarkJs }> | null = null;
 const loadMark = () => (markModule ??= import("mark.js"));
@@ -72,7 +70,7 @@ export function AirportInput({
     const timer = setTimeout(async () => {
       try {
         const hit = cache.get(q.toLowerCase());
-        const list = hit ?? (await api.searchAirports(q)).suggestions.slice(0, MAX_SHOWN);
+        const list = hit ?? (await api.searchAirports(q)).suggestions;
         if (!hit) cache.set(q.toLowerCase(), list);
         if (cancelled) return;
         setResults((r) => ({ term: q, list, seq: r.seq + 1 }));
@@ -111,6 +109,12 @@ export function AirportInput({
       cancelled = true;
     };
   }, [open, results]);
+
+  // With up to 20 results the list scrolls; keep the keyboard-highlighted row visible.
+  useEffect(() => {
+    if (!open || active < 0) return;
+    listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
 
   function choose(s: AirportSuggestion) {
     onChange(s.value);

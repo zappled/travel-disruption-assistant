@@ -49,7 +49,7 @@ describe("searchAirports", () => {
 
   it("returns nothing for empty input and caps results", () => {
     expect(searchAirports("  ")).toEqual([]);
-    expect(searchAirports("a").length).toBeLessThanOrEqual(8);
+    expect(searchAirports("a").length).toBeLessThanOrEqual(20);
   });
 });
 

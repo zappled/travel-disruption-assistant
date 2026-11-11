@@ -112,7 +112,7 @@ export function resolveAirports(input: string): Resolution {
  * Type-ahead suggestions for the From/To fields. Ranked so the most likely
  * intent comes first: exact code → metro area → code prefix → city → airport name.
  */
-export function searchAirports(input: string, limit = 8): AirportSuggestion[] {
+export function searchAirports(input: string, limit = 20): AirportSuggestion[] {
   const q = norm(input);
   if (!q) return [];
   const upper = q.toUpperCase();
