@@ -1,29 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const body = Atkinson_Hyperlegible({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const signage = Barlow_Condensed({
+  variable: "--font-signage",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Travel Disruption Assistant",
-  description: "Assess potential disruptions for US travel routes",
+  title: "Trip Check",
+  description: "Check a US flight route for weather and air-traffic disruptions",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${body.variable} ${signage.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
