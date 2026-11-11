@@ -1,0 +1,77 @@
+import { randomUUID } from "node:crypto";
+import { Router } from "express";
+import { z } from "zod";
+import { requireAuth } from "./auth.js";
+import type { Store } from "./store.js";
+import { MAX_SAVED_ROUTES, type SavedRoute } from "./types.js";
+
+const routeInputSchema = z.object({
+  label: z.string().trim().min(1, "Label is required").max(60),
+  origin: z.string().trim().min(1, "Origin is required").max(80),
+  destination: z.string().trim().min(1, "Destination is required").max(80),
+  prompt: z.string().trim().max(500).nullish().transform((v) => v || null),
+});
+
+const routesKey = (userId: string) => `routes:${userId}`;
+
+export function savedRoutesRouter(store: Store) {
+  const router = Router();
+  router.use(requireAuth(store));
+
+  const list = (userId: string) => store.get<SavedRoute[]>(routesKey(userId)) ?? [];
+  const save = (userId: string, routes: SavedRoute[]) => store.set(routesKey(userId), routes);
+
+  router.get("/", (req, res) => {
+    res.json({ routes: list(req.user!.id), max: MAX_SAVED_ROUTES });
+  });
+
+  router.post("/", (req, res) => {
+    const parsed = routeInputSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_input", message: parsed.error.issues[0].message });
+      return;
+    }
+    const routes = list(req.user!.id);
+    if (routes.length >= MAX_SAVED_ROUTES) {
+      res.status(409).json({
+        error: "limit_reached",
+        message: `You can save up to ${MAX_SAVED_ROUTES} routes. Delete or replace one first.`,
+      });
+      return;
+    }
+    const route: SavedRoute = { id: randomUUID(), createdAt: new Date().toISOString(), ...parsed.data };
+    save(req.user!.id, [...routes, route]);
+    res.status(201).json({ route });
+  });
+
+  router.put("/:id", (req, res) => {
+    const parsed = routeInputSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "invalid_input", message: parsed.error.issues[0].message });
+      return;
+    }
+    const routes = list(req.user!.id);
+    const idx = routes.findIndex((r) => r.id === req.params.id);
+    if (idx === -1) {
+      res.status(404).json({ error: "not_found", message: "Route not found." });
+      return;
+    }
+    const updated: SavedRoute = { ...routes[idx], ...parsed.data };
+    routes[idx] = updated;
+    save(req.user!.id, routes);
+    res.json({ route: updated });
+  });
+
+  router.delete("/:id", (req, res) => {
+    const routes = list(req.user!.id);
+    const next = routes.filter((r) => r.id !== req.params.id);
+    if (next.length === routes.length) {
+      res.status(404).json({ error: "not_found", message: "Route not found." });
+      return;
+    }
+    save(req.user!.id, next);
+    res.status(204).end();
+  });
+
+  return router;
+}
