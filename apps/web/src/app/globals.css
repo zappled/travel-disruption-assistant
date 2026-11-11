@@ -509,6 +509,10 @@ select.input {
   color: var(--ink);
   cursor: pointer;
   padding: 5px 14px;
+  /* Path and time of day use different fonts; centre them vertically */
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
 }
 /* Usual time of day after the path, e.g. "JFK → SFO  Morning" */
 .saved-chip .chip-when {
