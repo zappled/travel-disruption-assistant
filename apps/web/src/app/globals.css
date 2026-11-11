@@ -596,7 +596,9 @@ select.input {
   margin-top: 8px;
   font-size: 0.9rem;
 }
-.risk-explainer summary {
+/* Disclosure toggles ("What does this mean?", "Evidence from N sources") share one style */
+.risk-explainer summary,
+.evidence-toggle summary {
   cursor: pointer;
   color: var(--chart);
   width: fit-content;
