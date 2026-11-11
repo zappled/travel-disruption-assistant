@@ -312,6 +312,9 @@ h3 {
   text-underline-offset: 2px;
 }
 
+.field-hint {
+  font-weight: 400;
+}
 .error-text {
   color: var(--risk-severe);
   font-size: 0.92rem;

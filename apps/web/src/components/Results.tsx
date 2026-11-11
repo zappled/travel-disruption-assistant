@@ -67,6 +67,7 @@ export function Results({ data }: { data: AssessResponse }) {
         <div className="strip-meta">
           {formatDate(route.date)}
           {route.daysAhead === 0 ? " (today)" : route.daysAhead === 1 ? " (tomorrow)" : ` (in ${route.daysAhead} days)`}
+          {route.travelWindow ? <div>{route.travelWindow.description}</div> : <div>Any time of day</div>}
         </div>
 
         <div className="verdict">

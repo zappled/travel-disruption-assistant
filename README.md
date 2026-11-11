@@ -60,6 +60,7 @@ free text ──(Claude: parse)──▶ form fields (user confirms)
 **Design decisions**
 - **Rules produce the facts and the AI explains them.** The model only sees signals extracted by rules from real data, and every risk it states must cite signal IDs. The API removes any risk that cites nothing real.
 - **Confidence is partly deterministic.** Trips 3+ days out are capped at medium and 5+ days at low; failed sources lower it too. The AI can lower confidence further but can't raise it above the cap.
+- **Time of day changes severity.** Morning (5am–12pm), afternoon (12–5pm), evening (5–10pm) and overnight (10pm–5am) are departure windows in the origin's local time. The destination gets an arrival window: departure plus an estimated flight time from great-circle distance. Weather inside a window keeps its severity; weather elsewhere that day drops one level and is labelled. Open-Meteo hourly data, TAF groups, NWS day/night periods, alerts and closures all use these windows. NWS periods are 12-hour blocks, so they're the coarsest source.
 - **Current versus forecast.** FAA programs describe conditions *now*. They count fully only for today and tomorrow; otherwise they're shown as context.
 - **Never guess locations.** "Portland" asks OR or ME. "New York" checks JFK, LGA and EWR and compares them.
 - **Graceful degradation.** Each source can fail independently; the result shows which sources responded.

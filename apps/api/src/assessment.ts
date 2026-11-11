@@ -112,15 +112,14 @@ export async function runAssessment(store: Store, req: AssessRequest): Promise<A
   }
 
   // 3. Gather live data and extract signals.
-  const airports = [...origin, ...destination.filter((a) => !origin.some((o) => o.iata === a.iata))];
-  const { signals, sources } = await gather(store, airports, req.date, daysAhead);
+  const { signals, sources, travelWindow } = await gather(store, { origin, destination }, req.date, daysAhead, req.timeOfDay ?? null);
 
   // 4. Synthesise — AI first, rules as fallback.
   const notices: string[] = [];
   const { cap, reasons } = confidenceCap(daysAhead, sources);
   let assessment: Assessment;
   try {
-    const ai = await assessWithAi({ origin, destination, date: req.date, daysAhead, timeOfDay: req.timeOfDay, notes: req.notes, signals, sources });
+    const ai = await assessWithAi({ origin, destination, date: req.date, daysAhead, travelWindow, notes: req.notes, signals, sources });
     const checked = enforceEvidence(ai, signals);
     if (checked.droppedRisks > 0) notices.push(`${checked.droppedRisks} AI-suggested risk(s) were removed because they weren't backed by evidence.`);
     const { droppedRisks: _unused, ...rest } = checked;
@@ -145,7 +144,7 @@ export async function runAssessment(store: Store, req: AssessRequest): Promise<A
   if (daysAhead >= 2) notices.push("FAA delay programs reflect current conditions only; they are shown as context, not a forecast.");
 
   return {
-    route: { origin, destination, date: req.date, daysAhead },
+    route: { origin, destination, date: req.date, daysAhead, travelWindow },
     assessment,
     signals,
     sources,

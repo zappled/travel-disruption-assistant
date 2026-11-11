@@ -1,6 +1,6 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import type { Airport, Assessment, Signal, SourceStatus } from "../types.js";
+import type { Airport, Assessment, Signal, SourceStatus, TravelWindow } from "../types.js";
 import { MODEL, RefusalError, getClient } from "./client.js";
 
 const AssessmentSchema = z.object({
@@ -40,6 +40,7 @@ Guidance:
 - Low risk is a valid, useful answer. If signals are only fair_weather or severity 0, say so plainly and keep recommendations minimal.
 - Severity scale: 0 informational, 1 minor, 2 significant, 3 severe. A single severity-1 signal rarely justifies more than "low".
 - Signals with timing "current" describe conditions right now. For trips 2+ days away they are context, not a forecast for the travel date.
+- When the traveller gave a time of day, each signal's "window" says whether it falls inside their departure/arrival window ("inside") or elsewhere that day ("outside"; already one severity level lower). Weigh inside-window signals most. If a risk is mostly outside their window, say so; if it falls inside, say whether an earlier or later flight would avoid it.
 - Where several airports serve a city (e.g. JFK/LGA/EWR), point out if one is notably worse than the others.
 - When sources disagree (e.g. one model forecasts heavy rain, another does not), mention the uncertainty.
 - Confidence must reflect the forecast horizon (5+ days out is inherently low confidence) and missing or failed sources.
@@ -50,7 +51,7 @@ export interface AssessContext {
   destination: Airport[];
   date: string;
   daysAhead: number;
-  timeOfDay?: string | null;
+  travelWindow: TravelWindow | null;
   notes?: string | null;
   signals: Signal[];
   sources: SourceStatus[];
@@ -64,6 +65,7 @@ function buildPrompt(ctx: AssessContext): string {
     kind: s.kind,
     severity: s.severity,
     timing: s.timing,
+    window: s.window ?? null,
     summary: s.summary,
     source: s.evidence.sourceName,
     excerpt: s.evidence.excerpt,
@@ -74,7 +76,9 @@ function buildPrompt(ctx: AssessContext): string {
     `Origin airports: ${ctx.origin.map(ap).join("; ")}`,
     `Destination airports: ${ctx.destination.map(ap).join("; ")}`,
     `Travel date: ${ctx.date} (${ctx.daysAhead === 0 ? "today" : `${ctx.daysAhead} day(s) from now`})`,
-    ctx.timeOfDay ? `Preferred time of day: ${ctx.timeOfDay}` : null,
+    ctx.travelWindow
+      ? `Travel window (${ctx.travelWindow.timeOfDay}): ${ctx.travelWindow.description}. Arrival times are an estimate.`
+      : `Travel window: any time on the travel date (no time of day given).`,
     ctx.notes ? `Traveller notes: ${ctx.notes}` : null,
     `</trip>`,
     `<sources>\n${JSON.stringify(sources, null, 2)}\n</sources>`,

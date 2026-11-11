@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AirportInput } from "@/components/AirportInput";
 import { takeDraft, useApp } from "@/components/AppShell";
 import { Results } from "@/components/Results";
+import { TIME_WINDOWS } from "@tda/api/types";
 import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute } from "@/lib/api";
 
 const MAX_DAYS = 14;
@@ -199,11 +200,13 @@ export default function CheckPage() {
             Time of day
             <select className="input" value={trip.timeOfDay} onChange={(e) => set({ timeOfDay: e.target.value })}>
               <option value="">Any time</option>
-              <option value="morning">Morning</option>
-              <option value="afternoon">Afternoon</option>
-              <option value="evening">Evening</option>
-              <option value="overnight">Overnight / red-eye</option>
+              {(Object.keys(TIME_WINDOWS) as (keyof typeof TIME_WINDOWS)[]).map((k) => (
+                <option key={k} value={k}>
+                  {TIME_WINDOWS[k].label} ({TIME_WINDOWS[k].range})
+                </option>
+              ))}
             </select>
+            <span className="muted small field-hint">Departure, in local time</span>
           </label>
           {trip.notes && (
             <label className="field span-2">

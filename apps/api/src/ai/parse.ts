@@ -7,7 +7,10 @@ const ParsedTripSchema = z.object({
   origin: z.string().nullable().describe("Origin city or airport as the user wrote it, normalised (e.g. 'New York', 'SFO'). null if not stated."),
   destination: z.string().nullable().describe("Destination city or airport. null if not stated."),
   date: z.string().nullable().describe("Travel date as YYYY-MM-DD, resolved against today's date. null if not stated."),
-  timeOfDay: z.enum(["morning", "afternoon", "evening", "overnight"]).nullable(),
+  timeOfDay: z
+    .enum(["morning", "afternoon", "evening", "overnight"])
+    .nullable()
+    .describe("Departure time bucket, local time: morning 5am–12pm, afternoon 12pm–5pm, evening 5pm–10pm, overnight 10pm–5am (red-eye). Map explicit times (e.g. '7am flight' → morning). null if not stated."),
   notes: z.string().nullable().describe("Other trip details worth keeping (e.g. connection city, airline), else null."),
 });
 

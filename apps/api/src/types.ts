@@ -39,6 +39,32 @@ export type SignalKind =
   | "heavy_rain"
   | "fair_weather";
 
+export type TimeOfDay = "morning" | "afternoon" | "evening" | "overnight";
+
+/**
+ * Departure windows in the origin airport's local time. Hours past 24 run into
+ * the next day (overnight = 10pm to 5am). Shared with the web app's dropdown.
+ */
+export const TIME_WINDOWS: Record<TimeOfDay, { label: string; startHour: number; endHour: number; range: string }> = {
+  morning: { label: "Morning", startHour: 5, endHour: 12, range: "5am–12pm" },
+  afternoon: { label: "Afternoon", startHour: 12, endHour: 17, range: "12pm–5pm" },
+  evening: { label: "Evening", startHour: 17, endHour: 22, range: "5pm–10pm" },
+  overnight: { label: "Overnight / red-eye", startHour: 22, endHour: 29, range: "10pm–5am" },
+};
+
+export interface TravelWindow {
+  timeOfDay: TimeOfDay;
+  /** Departure window at the origin, UTC ISO */
+  departStart: string;
+  departEnd: string;
+  /** Estimated arrival window at the destination (departure + est. flight time), UTC ISO */
+  arriveStart: string;
+  arriveEnd: string;
+  estFlightHours: number;
+  /** Human-readable, in each airport's local time */
+  description: string;
+}
+
 /** 0 = informational, 1 = minor, 2 = significant, 3 = severe */
 export type Severity = 0 | 1 | 2 | 3;
 
@@ -58,6 +84,8 @@ export interface Signal {
   summary: string;
   /** "current" = conditions now; "forecast" = for the travel date */
   timing: "current" | "forecast";
+  /** Relative to the traveller's time-of-day window, when one was given */
+  window?: "inside" | "outside";
   evidence: Evidence;
 }
 
@@ -96,6 +124,7 @@ export interface AssessResponse {
     destination: Airport[];
     date: string;
     daysAhead: number;
+    travelWindow: TravelWindow | null;
   };
   assessment: Assessment;
   signals: Signal[];
@@ -128,7 +157,7 @@ export interface ParsedTrip {
   origin: string | null;
   destination: string | null;
   date: string | null;
-  timeOfDay: "morning" | "afternoon" | "evening" | "overnight" | null;
+  timeOfDay: TimeOfDay | null;
   notes: string | null;
 }
 

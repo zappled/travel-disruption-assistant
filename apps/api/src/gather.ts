@@ -4,7 +4,8 @@
  * its confidence and the UI can show what's missing.
  */
 import type { Store } from "./store.js";
-import type { Airport, SourceStatus } from "./types.js";
+import type { Airport, SourceStatus, TimeOfDay, TravelWindow } from "./types.js";
+import { computeTravelWindow } from "./travelWindow.js";
 import { extractSignals, type SignalInput } from "./signals.js";
 import { FAA_NAME, FAA_URL, fetchFaa } from "./sources/faa.js";
 import { NWS_NAME, fetchNwsForAirport, type NwsAirportData } from "./sources/nws.js";
@@ -15,6 +16,7 @@ import { errorMessage } from "./sources/http.js";
 export interface GatherResult {
   signals: ReturnType<typeof extractSignals>;
   sources: SourceStatus[];
+  travelWindow: TravelWindow | null;
 }
 
 /** Settle per-airport fetches and summarise them into one SourceStatus. */
@@ -40,10 +42,12 @@ function perAirportStatus<T>(
 
 export async function gather(
   store: Store,
-  airports: Airport[],
+  route: { origin: Airport[]; destination: Airport[] },
   date: string,
   daysAhead: number,
+  timeOfDay: TimeOfDay | null = null,
 ): Promise<GatherResult> {
+  const airports = [...route.origin, ...route.destination.filter((a) => !route.origin.some((o) => o.iata === a.iata))];
   const [faaR, tafR, nwsR, omR] = await Promise.all([
     fetchFaa(store).then((v) => ({ ok: true as const, v }), (e) => ({ ok: false as const, e })),
     fetchTafs(store, airports).then((v) => ({ ok: true as const, v }), (e) => ({ ok: false as const, e })),
@@ -94,6 +98,10 @@ export async function gather(
   );
   sources.push(om.status);
 
+  // Time-of-day windows need each airport's UTC offset (from Open-Meteo, else longitude).
+  const offsetOf = (a: Airport) => om.ok.get(a.iata)?.utcOffsetSeconds ?? Math.round(a.lon / 15) * 3600;
+  const tw = timeOfDay ? computeTravelWindow(timeOfDay, date, route.origin, route.destination, offsetOf) : null;
+
   const input: SignalInput = {
     date,
     daysAhead,
@@ -102,6 +110,7 @@ export async function gather(
     tafs: tafR.ok && tafRelevant ? tafR.v : undefined,
     nws: nws.ok,
     openMeteo: om.ok,
+    windows: tw?.perAirport,
   };
-  return { signals: extractSignals(input), sources };
+  return { signals: extractSignals(input), sources, travelWindow: tw?.window ?? null };
 }
