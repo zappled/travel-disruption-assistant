@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AirportInput } from "@/components/AirportInput";
+import { RouteArrow } from "@/components/RouteArrow";
 import { useApp } from "@/components/AppShell";
 import { TIME_WINDOWS, type TimeOfDay } from "@tda/api/types";
 import { api, ApiError, type SavedRoute } from "@/lib/api";
@@ -148,7 +149,7 @@ export default function SavedRoutesPage() {
             <li key={r.id} className="list-item">
               <div className="list-main">
                 <h2 className="list-codes">
-                  {r.origin} → {r.destination}
+                  {r.origin} <RouteArrow /> {r.destination}
                 </h2>
                 <p className="list-when">{r.timeOfDay ? timeLabel(r.timeOfDay) : "Any time of day"}</p>
                 {r.prompt && <p className="list-note">{r.prompt}</p>}

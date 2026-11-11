@@ -514,6 +514,22 @@ select.input {
   align-items: center;
   line-height: 1.2;
 }
+/* Arrow between airport codes, raised to the middle of the capitals */
+.route-arrow {
+  display: inline-block;
+  transform: translateY(-0.1em);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 /* Usual time of day after the path, e.g. "JFK → SFO  Morning" */
 .saved-chip .chip-when {
   margin-left: 8px;

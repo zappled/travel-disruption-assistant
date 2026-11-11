@@ -6,6 +6,7 @@ import { AirportInput } from "@/components/AirportInput";
 import { takeDraft, useApp } from "@/components/AppShell";
 import { InfoTip } from "@/components/InfoTip";
 import { Results } from "@/components/Results";
+import { RouteArrow } from "@/components/RouteArrow";
 import { TIME_WINDOWS, type TimeOfDay } from "@tda/api/types";
 import { api, ApiError, localDate, type AmbiguousResponse, type AssessResponse, type SavedRoute } from "@/lib/api";
 
@@ -223,7 +224,7 @@ export default function CheckPage() {
             <span className="saved-chip" key={r.id}>
               <button onClick={() => applyRoute(r)} title={r.prompt ?? undefined}>
                 <span className="codes">
-                  {r.origin} → {r.destination}
+                  {r.origin} <RouteArrow /> {r.destination}
                 </span>
                 {r.timeOfDay && <span className="chip-when">{TIME_WINDOWS[r.timeOfDay].label.split(" /")[0]}</span>}
               </button>
