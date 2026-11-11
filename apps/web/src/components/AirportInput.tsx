@@ -48,7 +48,7 @@ export function AirportInput({
       } catch {
         // Suggestions are a convenience; typing still works without them.
       }
-    }, 120);
+    }, 200);
     return () => {
       cancelled = true;
       clearTimeout(timer);
